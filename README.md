@@ -5,6 +5,7 @@ Minimal, single header file library for aggregate struct / class reflection in C
 -----
 ## Installation
 - Copy 'reflect.h' to project
+
 - In ONE cpp file, define REGISTER_REFLECTION:
 ```cpp
     #define REGISTER_REFLECTION
@@ -13,11 +14,13 @@ Minimal, single header file library for aggregate struct / class reflection in C
     #include "my_struct_2.h"
     #include etc...
 ```
+
 - Classes / structs should be simple aggregate structs (standard layout)
      - No private or protected non-static data members
      - No user-declared / user-provided constructors 
      - No virtual member functions
      - No default member initializers (invalid in C++11, okay in C++14 and higher)
+
 - BEFORE using reflection functions, initiate call to 
 ```cpp
     InitializeReflection();
@@ -28,32 +31,32 @@ Minimal, single header file library for aggregate struct / class reflection in C
 ## Usage
 ### Registration in Header file, ex: "transform.h"
 ```cpp
-#include "reflect.h"
-struct Transform {
-    int width;        
-    int height;
-    std::vector<double> position;
-    std::string text;
-    REFLECT();
-}
-#ifdef REGISTER_REFLECTION
-    REFLECT_STRUCT(Transform)
-    REFLECT_MEMBER(width)
-    REFLECT_MEMBER(height)
-    REFLECT_MEMBER(position)
-    REFLECT_END(Transform)
-#endif
+    #include "reflect.h"
+    struct Transform {
+        int width;        
+        int height;
+        std::vector<double> position;
+        std::string text;
+        REFLECT();
+    }
+    #ifdef REGISTER_REFLECTION
+        REFLECT_STRUCT(Transform)
+        REFLECT_MEMBER(width)
+        REFLECT_MEMBER(height)
+        REFLECT_MEMBER(position)
+        REFLECT_END(Transform)
+    #endif
 ```
 
 -----
 ## In Code
-### Example initialize class instance
+### Initialize class instance
 ```cpp
     Transform t { };
-        t.width =    100;
-        t.height =   100;
-        t.position = std::vector<double>({1.0, 2.0, 3.0});
-        t.text = "Hello world!";
+    t.width = 100;
+    t.height = 100;
+    t.position = std::vector<double>({1.0, 2.0, 3.0});
+    t.text = "Hello world!";
 ```
 ### Meta Data
 ```cpp
@@ -109,6 +112,25 @@ struct Transform {
             default: ;
         }
         std::cout << std::endl;
+    }
+```
+
+-----
+## Data from Unknown Type
+- If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized store the class typeid().hash_code:
+```cpp
+    HashID hash = GetComponentData(t).hash_code;
+    void* component_ptr = (void*)(&t);
+```  
+- Later, if your classes are stored as void* in an array / vector / etc. with other classes, you may still access the member variables using only the type hash code:                                             
+```cpp
+    using vec = std::vector<double>;
+    int value_type = GetPropertyData(hash, 3).type;
+    if (value_type == PROPERTY_TYPE_VECTOR_DOUBLE) {
+        vec rotation = GetProperty<vec>(component_ptr, hash, 3);
+        std::cout << "  Rotation X: " << rotation[0];
+        std::cout << ", Rotation Y: " << rotation[1];
+        std::cout << ", Rotation Z: " << rotation[2];
     }
 ```
 
