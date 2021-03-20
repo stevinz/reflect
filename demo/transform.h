@@ -18,12 +18,12 @@
 //##        Sample component used to descibe a location of an object
 //############################
 struct Transform {
-	int						width;
-	int						height;
-	std::vector<double>		position;
-	std::vector<double>		rotation;
-	std::vector<double>		scale;
-	std::string				text;
+	int width;
+	int	height;
+	std::vector<double> position;
+	std::vector<double>	rotation;
+	std::vector<double>	scale;
+	std::string	text;
 
 	REFLECT();
 };
