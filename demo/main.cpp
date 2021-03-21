@@ -79,11 +79,13 @@ int main(int argc, char* argv[]) {
         std::cout << "  Property Number: " << p << ", \t Name: " << GetPropertyData(t, p).name << ", Value: ";
         // Member variable type can be specified in your class header file using MEMBER_META_TYPE(Property_Type)
         // This enum can easily be exapnded...
-        switch (GetPropertyData(t, p).type) {
-            case PROPERTY_TYPE_INT:             std::cout << GetProperty<int>(t, p);                        break;
-            case PROPERTY_TYPE_VECTOR_DOUBLE:   std::cout << GetProperty<std::vector<double>>(t, p)[0];     break;
-            case PROPERTY_TYPE_STRING:          std::cout << GetProperty<std::string>(t, p);                break;
-            default: ;
+        HashID type = GetPropertyData(t, p).hash_code;
+        if        (type == PROPERTY_TYPE_INT) {
+            std::cout << GetProperty<int>(t, p);                    
+        } else if (type == PROPERTY_TYPE_VECTOR_DOUBLE) {    
+            std::cout << GetProperty<std::vector<double>>(t, p)[0];
+        } else if (type == PROPERTY_TYPE_STRING) {
+            std::cout << GetProperty<std::string>(t, p);
         }
         std::cout << std::endl;
     }
@@ -107,30 +109,15 @@ int main(int argc, char* argv[]) {
             void*  component_ptr = (void*)(&t);
     //  
     //  Later if your class is stored as void* in an array/vector/list with other classes, you may still get
-    //  the member variables using only the type hash code:                                                                         
+    //  the member variables using only the Component type hash code:                                                                         
     //
     std::cout << "Getting Property from unknown class type:" << std::endl;
-    int type = GetPropertyData(hash, 3).type;
-
-    // Member variable type can be specified in your class header file using MEMBER_META_TYPE(Property_Type)
-    // This enum can easily be exapnded...
-    switch (type) {
-        case PROPERTY_TYPE_BOOL:                /* Process bool             */   break;
-        case PROPERTY_TYPE_CHAR:                /* Process char             */   break;
-        case PROPERTY_TYPE_INT:                 /* Process int              */   break;
-        case PROPERTY_TYPE_DOUBLE:              /* Process double           */   break;
-        case PROPERTY_TYPE_VECTOR_BOOL:         /* Process vector<bool>     */   break;
-        case PROPERTY_TYPE_VECTOR_CHAR:         /* Process vector<char>     */   break;
-        case PROPERTY_TYPE_VECTOR_INT:          /* Process vector<int>      */   break;
-        case PROPERTY_TYPE_VECTOR_DOUBLE: {     /* Process vector<double>   */
-            std::vector<double> rotation = GetProperty<std::vector<double>>(component_ptr, hash, 3);
-            std::cout << "  Rotation X: " << rotation[0] << ", Rotation Y: " << rotation[1] << ", Rotation Z: " << rotation[2] << std::endl;
-            break;
-        }
-        case PROPERTY_TYPE_UNKNOWN:         /* Unknown Type, not specified during registraion?? */ ;
+    HashID type = GetPropertyData(hash, 3).hash_code;
+    if (type == PROPERTY_TYPE_VECTOR_DOUBLE) {
+        std::vector<double> rotation = GetProperty<std::vector<double>>(component_ptr, hash, 3);
+        std::cout << "  Rotation X: " << rotation[0] << ", Rotation Y: " << rotation[1] << ", Rotation Z: " << rotation[2] << std::endl;
     }
 
 
     // ########## END DEMO
 }
-

@@ -19,11 +19,11 @@
 //############################
 struct Transform {
 	int width;
-	int	height;
+	int height;
 	std::vector<double> position;
-	std::vector<double>	rotation;
-	std::vector<double>	scale;
-	std::string	text;
+	std::vector<double> rotation;
+	std::vector<double> scale;
+	std::string text;
 
 	REFLECT();
 };
@@ -36,19 +36,13 @@ struct Transform {
 	REFLECT_STRUCT(Transform)
 		STRUCT_META_DESCRIPTION("Describes the location and positioning of an object.")
 	REFLECT_MEMBER(width)
-		MEMBER_META_TYPE(PROPERTY_TYPE_INT)
 	REFLECT_MEMBER(height)
-		MEMBER_META_TYPE(PROPERTY_TYPE_INT)
 	REFLECT_MEMBER(position)
 		MEMBER_META_TITLE("Object Position")
 		MEMBER_META_DESCRIPTION("Location of an object in space.")
-		MEMBER_META_TYPE(PROPERTY_TYPE_VECTOR_DOUBLE)
 	REFLECT_MEMBER(rotation)
-		MEMBER_META_TYPE(PROPERTY_TYPE_VECTOR_DOUBLE)
 	REFLECT_MEMBER(scale)
-		MEMBER_META_TYPE(PROPERTY_TYPE_VECTOR_DOUBLE)
 	REFLECT_MEMBER(text)
-		MEMBER_META_TYPE(PROPERTY_TYPE_STRING)
 	REFLECT_END(Transform)
 #endif
 

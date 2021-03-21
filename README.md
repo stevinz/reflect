@@ -15,11 +15,12 @@ Minimal, single header file library for aggregate struct / class reflection in C
     #include etc...
 ```
 
-- Classes / structs should be simple aggregate structs (standard layout)
-     - No private or protected non-static data members
-     - No user-declared / user-provided constructors 
-     - No virtual member functions
-     - No default member initializers (invalid in C++11, okay in C++14 and higher)
+- Classes / structs should be simple aggregate types (standard layout)
+    - No private or protected non-static data members
+    - No user-declared / user-provided constructors 
+    - No virtual member functions
+    - No default member initializers (invalid in C++11, okay in C++14 and higher)
+    - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info 
 
 - BEFORE using reflection functions, initiate call to 
 ```cpp
@@ -29,8 +30,11 @@ Minimal, single header file library for aggregate struct / class reflection in C
 
 -----
 ## Usage
-### Registration in Header file, ex: "transform.h"
+### Registration in Header File, example: "transform.h"
 ```cpp
+    #ifndef TRANSFORM_H
+    #define TRANSFORM_H
+
     #include "reflect.h"
     struct Transform {
         int width;        
@@ -46,6 +50,8 @@ Minimal, single header file library for aggregate struct / class reflection in C
         REFLECT_MEMBER(position)
         REFLECT_END(Transform)
     #endif
+
+    #endif // TRANSFORM_H
 ```
 
 -----
@@ -53,10 +59,10 @@ Minimal, single header file library for aggregate struct / class reflection in C
 ### Initialize class instance
 ```cpp
     Transform t { };
-    t.width = 100;
-    t.height = 100;
-    t.position = std::vector<double>({1.0, 2.0, 3.0});
-    t.text = "Hello world!";
+        t.width = 100;
+        t.height = 100;
+        t.position = std::vector<double>({1.0, 2.0, 3.0});
+        t.text = "Hello world!";
 ```
 ### Meta Data
 ```cpp
@@ -66,19 +72,26 @@ Minimal, single header file library for aggregate struct / class reflection in C
     GetComponentData("Transform").property_count;    // By name
 
     // Property Meta Data
-    GetPropertyData<Transform>("width").type;        // By class, property name
+    GetPropertyData<Transform>("width").hash_code;   // By class, property name
     GetPropertyData<Transform>(0).description;       // By class, property index
     GetPropertyData(t, "position").description;      // By instance, property name 
     GetPropertyData(t, 2).name;                      // By instance, property index
 ```
 
 ### Get / Set Properties
+- Before calling GetProperty<>(), member variable type can be checked by comparing to predefined constants. These can easily be added to in 'reflect.h'...
 ```cpp
     // GetProperty by Index
-    int width = GetProperty<int>(t, 0);
+    HashID type = GetPropertyData(t, 0).hash_code;
+    if (type == PROPERTY_TYPE_INT) {
+        int width = GetProperty<int>(t, 0);
+    }
 
     // GetProperty by Name
-    std::vector<double> position = GetProperty<std::vector<double>>(t, "position");
+    HashID type = GetPropertyData(t, "position").hash_code;
+    if (type == PROPERTY_VECTOR_DOUBLE) {
+        std::vector<double> position = GetProperty<std::vector<double>>(t, "position");
+    }
 
     // SetProperty by Index
     int new_width = 50;
@@ -91,7 +104,6 @@ Minimal, single header file library for aggregate struct / class reflection in C
 
 -----
 ## Iterating Properties
-- Member variable type can be specified in your class header file using macro function MEMBER_META_TYPE(Property_Type) ... This enum can easily be exapnded...
 ```cpp
     using vec = std::vector<double>;
     int property_count = GetComponentData("Transform").property_count;
@@ -99,17 +111,13 @@ Minimal, single header file library for aggregate struct / class reflection in C
         std::cout << " Property Number: " << p << ", ";
         std::cout << " Name: " << GetPropertyData(t, p).name << ",";
         std::cout << " Value: ";
-        switch (GetPropertyData(t, p).type) {
-            case PROPERTY_TYPE_INT:             
-                std::cout << GetProperty<int>(t, p);
-                break;
-            case PROPERTY_TYPE_VECTOR_DOUBLE:   
-                std::cout << GetProperty<vec>(t, p)[0];
-                break;
-            case PROPERTY_TYPE_STRING:
-                std::cout << GetProperty<std::string>(t, p);
-                break;
-            default: ;
+        HashID type = GetPropertyData(t, p).hash_code;
+        if (type == PROPERTY_TYPE_INT) {
+            std::cout << GetProperty<int>(t, p);
+        } else if (type == PROPERTY_TYPE_VECTOR_DOUBLE) {
+            std::cout << GetProperty<vec>(t, p)[0];
+        } else if (type == PROPERTY_TYPE_STRING) {
+            std::cout << GetProperty<std::string>(t, p);
         }
         std::cout << std::endl;
     }
@@ -117,15 +125,15 @@ Minimal, single header file library for aggregate struct / class reflection in C
 
 -----
 ## Data from Unknown Type
-- If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized store the class typeid().hash_code:
+- If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized, store the class typeid().hash_code:
 ```cpp
     HashID hash = GetComponentData(t).hash_code;
     void* component_ptr = (void*)(&t);
 ```  
-- Later, if your classes are stored as void* in an array / vector / etc. with other classes, you may still access the member variables using only the type hash code:                                             
+- Later (if your components are stored as void * in an array / vector / etc. with other components) you may still access the member variables of the component without casting it back to the derived type. This is done by using the type hash code from earlier:
 ```cpp
     using vec = std::vector<double>;
-    int value_type = GetPropertyData(hash, 3).type;
+    HashID value_type = GetPropertyData(hash, 3).hash_code;
     if (value_type == PROPERTY_TYPE_VECTOR_DOUBLE) {
         vec rotation = GetProperty<vec>(component_ptr, hash, 3);
         std::cout << "  Rotation X: " << rotation[0];

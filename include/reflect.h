@@ -37,11 +37,12 @@
 //      #include "my_struct_2.h"
 //      #include etc...
 //
-// - Classes / structs should be simple aggregate structs (standard layout)
+// - Classes / structs should be simple aggregate types (standard layout)
 //      - No private or protected non-static data members
 //      - No user-declared / user-provided constructors 
 //      - No virtual member functions
 //      - No default member initializers (invalid in C++11, okay in C++14 and higher)
+//      - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info 
 //
 // - !!!!! BEFORE using reflection, initiate call to 'InitializeReflection()'
 //
@@ -94,10 +95,20 @@
 //
 //      GET / SET PROPERTY
 //      ------------------
+//      Before calling GetProperty<>(), member variable type can be checked by comparing to
+//      predefined constants. These can easily be added to under "Property Types" below...
+//
 //      - GetProperty by Index
-//          int width = GetProperty<int>(t, 0);
+//          HashID type = GetPropertyData(t, 0).hash_code;
+//          if (type == PROPERTY_TYPE_INT) {
+//              int width = GetProperty<int>(t, 0);
+//          }
+//
 //      - GetProperty by Name
-//          std::vector<double> position = GetProperty<std::vector<double>>(t, "position");
+//          HashID type = GetPropertyData(t, "position").hash_code;
+//          if (type == PROPERTY_VECTOR_DOUBLE) {
+//              std::vector<double> position = GetProperty<std::vector<double>>(t, "position");
+//          }
 //
 //      - SetProperty by Index
 //          int new_width = 50;
@@ -119,25 +130,34 @@
 #include <typeinfo>
 #include <vector>
 
-//####################################################################################
-//##    Property Types
-//############################
-enum Property_Types {
-    PROPERTY_TYPE_UNKNOWN,
-    PROPERTY_TYPE_BOOL,
-    PROPERTY_TYPE_CHAR,
-    PROPERTY_TYPE_INT,
-    PROPERTY_TYPE_DOUBLE,
-    PROPERTY_TYPE_VECTOR_BOOL,
-    PROPERTY_TYPE_VECTOR_CHAR,
-    PROPERTY_TYPE_VECTOR_INT,
-    PROPERTY_TYPE_VECTOR_DOUBLE,
-    PROPERTY_TYPE_STRING,
-};
-
 // Type Definitions
 using HashID =          size_t;                                                     // This comes from typeid(OBJECT).hash_code()
 using Functions =       std::vector<std::function<void()>>;                         // List of funcitons
+
+//####################################################################################
+//##    Property Types
+//############################
+const HashID PROPERTY_TYPE_UNKNOWN =        0;
+const HashID PROPERTY_TYPE_BOOL =           typeid(bool).hash_code();
+const HashID PROPERTY_TYPE_CHAR =           typeid(char).hash_code();
+const HashID PROPERTY_TYPE_STRING =         typeid(std::string).hash_code();
+const HashID PROPERTY_TYPE_INT =            typeid(int).hash_code();
+const HashID PROPERTY_TYPE_UINT =           typeid(unsigned int).hash_code();
+const HashID PROPERTY_TYPE_LONG =           typeid(long).hash_code();
+const HashID PROPERTY_TYPE_FLOAT =          typeid(float).hash_code();
+const HashID PROPERTY_TYPE_DOUBLE =         typeid(double).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_BOOL =    typeid(std::vector<bool>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_CHAR =    typeid(std::vector<char>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_STRING =  typeid(std::vector<std::string>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_INT =     typeid(std::vector<int>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_UINT =    typeid(std::vector<unsigned int>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_LONG =    typeid(std::vector<long>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_FLOAT =   typeid(std::vector<float>).hash_code();
+const HashID PROPERTY_TYPE_VECTOR_DOUBLE =  typeid(std::vector<double>).hash_code();
+// ...
+// easy to add more predefined types here
+// these predifined types allow for easy identification before calling: GetProperty<type>()
+// ...
 
 //####################################################################################
 //##    Component / Property data structs
@@ -161,7 +181,6 @@ struct PropertyData {
     // ----- Following Meta Data Can Be User Set -----
     std::string         title           { "unknown" };                              // Display name of this Property
     std::string         description     { "No property description." };             // Description of this Property
-    int                 type            { PROPERTY_TYPE_UNKNOWN };                  // Type info for what type to use to retrieve value
 };
 
 //####################################################################################
@@ -218,8 +237,7 @@ void RegisterComponent(ComponentData comp_data) {
 
 // Call this to register member variable with reflection / meta data system, typename PT is Property Type
 template <typename PT>
-void RegisterProperty(ComponentData comp_data, PropertyData prop_data) {        
-    //assert(typeid(PT).hash_code() != typeid(std::string).hash_code() && "Type std::string not supported for property type!!");             
+void RegisterProperty(ComponentData comp_data, PropertyData prop_data) {
 	g_reflect->AddMetaProperty(comp_data, prop_data); 
 } 
 
@@ -390,7 +408,6 @@ void SetProperty(void* component, HashID component_hash_id, std::string property
 // Meta data functions
 #define MEMBER_META_TITLE(STRING) 		props[property_number].title = 			#STRING;	RegisterProperty(comp, props[property_number]); 
 #define MEMBER_META_DESCRIPTION(STRING) props[property_number].description = 	#STRING; 	RegisterProperty(comp, props[property_number]); 
-#define MEMBER_META_TYPE(INT) 			props[property_number].type = 			INT; 		RegisterProperty(comp, props[property_number]); 
 
 // Static definitions add Registration Function to list of Components to be registered
 #define REFLECT_END(TYPE) \
