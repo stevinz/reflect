@@ -210,8 +210,8 @@ public:
 //####################################################################################
 //##    Global Variable Declarations
 //####################################################################################
-extern DrReflect*       g_reflect;                                                  // Meta data singleton
-extern Functions        g_register_list;                                            // Keeps list of registration functions 
+extern std::shared_ptr<DrReflect>   g_reflect;                                      // Meta data singleton
+extern Functions                    g_register_list;                                // Keeps list of registration functions 
 
 //####################################################################################
 //##    General Functions
@@ -428,14 +428,14 @@ void SetProperty(void* component, HashID component_hash_id, std::string property
 #ifdef REGISTER_REFLECTION
 
 // Gloabls
-DrReflect*              g_reflect           { nullptr };                            // Meta data singleton
-Functions               g_register_list     { };                                    // Keeps list of registration functions
+std::shared_ptr<DrReflect>      g_reflect           { nullptr };                    // Meta data singleton
+Functions                       g_register_list     { };                            // Keeps list of registration functions
 
 // ########## General Registration ##########
 // Initializes global reflection object, registers classes with Reflection System
 void InitializeReflection() {
     // Create Singleton
-    g_reflect = new DrReflect();                                                    
+    g_reflect = std::make_shared<DrReflect>();
     
     // Register Structs / Classes
     for (int func = 0; func < g_register_list.size(); ++func) {
