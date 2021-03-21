@@ -1,6 +1,6 @@
 # Reflect
 
-Minimal, single header file library for aggregate struct / class reflection in C++ 11. Limited STL usage, no other dependencies.
+Small, single header file library for aggregate struct / class runtime reflection using C++ 11 features. Minimal STL usage, no other dependencies.
 
 -----
 ## Installation
