@@ -7,17 +7,17 @@
 // Copyright (c) 2021 Stephens Nunnally and Scidian Software
 //
 //
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#ifndef TRANSFORM2D_H
+#define TRANSFORM2D_H
 
 #include "../include/reflect.h"
 
 
 //####################################################################################
-//##    Component: Transform
+//##    Component: Transform2D
 //##        Sample component used to descibe a location of an object
 //############################
-struct Transform {
+struct Transform2D {
 	int width;
 	int height;
 	std::vector<double> position;
@@ -33,7 +33,7 @@ struct Transform {
 //##    Register Reflection / Meta Data
 //############################
 #ifdef REGISTER_REFLECTION
-	REFLECT_CLASS(Transform)
+	REFLECT_CLASS(Transform2D)
 	//	CLASS_META_DESCRIPTION("Describes the location and positioning of an object.")
 	REFLECT_MEMBER(width)
 	REFLECT_MEMBER(height)
@@ -43,8 +43,8 @@ struct Transform {
 	REFLECT_MEMBER(rotation)
 	REFLECT_MEMBER(scale)
 	REFLECT_MEMBER(text)
-	REFLECT_END(Transform)
+	REFLECT_END(Transform2D)
 #endif
 
-#endif	// TRANSFORM_H
+#endif	// TRANSFORM2D_H
 
