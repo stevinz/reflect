@@ -33,13 +33,13 @@ struct Transform {
 //##    Register Reflection / Meta Data
 //############################
 #ifdef REGISTER_REFLECTION
-	REFLECT_STRUCT(Transform)
-		STRUCT_META_DESCRIPTION("Describes the location and positioning of an object.")
+	REFLECT_CLASS(Transform)
+	//	CLASS_META_DESCRIPTION("Describes the location and positioning of an object.")
 	REFLECT_MEMBER(width)
 	REFLECT_MEMBER(height)
 	REFLECT_MEMBER(position)
 		MEMBER_META_TITLE("Object Position")
-		MEMBER_META_DESCRIPTION("Location of an object in space.")
+	//	MEMBER_META_DESCRIPTION("Location of an object in space.")
 	REFLECT_MEMBER(rotation)
 	REFLECT_MEMBER(scale)
 	REFLECT_MEMBER(text)

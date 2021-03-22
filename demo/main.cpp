@@ -46,75 +46,73 @@ int main(int argc, char* argv[]) {
        
 
     // ########## EXAMPLE: Get meta data by class type / name, member variable name / index
-    std::cout << "Class Name: "         << GetComponentData<Transform>().name           << std::endl;
-    std::cout << "Class Description: "  << GetComponentData("Transform").description    << std::endl;
-    std::cout << "Class Description: "  << GetComponentData<Transform>().description    << std::endl;
-    std::cout << "  Property Name:   "  << GetPropertyData<Transform>("width").name     << std::endl;
-    std::cout << "  Property About:  "  << GetPropertyData<Transform>(0).description    << std::endl;
+    std::cout << "Class Name: "         << GetClassData<Transform>().name           << std::endl;
+    std::cout << "Class Description: "  << GetClassData("Transform").name           << std::endl;
+    std::cout << "Class Description: "  << GetClassData<Transform>().name           << std::endl;
+    std::cout << "  Member Name:   "    << GetMemberData<Transform>("width").name   << std::endl;
+    std::cout << "  Member About:  "    << GetMemberData<Transform>(0).name         << std::endl;
 
     // ########## EXAMPLE: Get meta data by class instance, member variable name / index
-    std::cout << "Class Name: "         << GetComponentData(t).name                    << std::endl;
-    std::cout << "Class Description: "  << GetComponentData(t).description             << std::endl;
-    std::cout << "  Property Name:   "  << GetPropertyData(t, "position").name         << std::endl;
-    std::cout << "  Property About:  "  << GetPropertyData(t, 2).description            << std::endl;   
+    std::cout << "Class Name: "         << GetClassData(t).name                     << std::endl;
+    std::cout << "Class Description: "  << GetClassData(t).name                     << std::endl;
+    std::cout << "  Member Name:   "    << GetMemberData(t, "position").name        << std::endl;
+    std::cout << "  Member About:  "    << GetMemberData(t, 2).name                 << std::endl;   
 
 
 
-    // ########## EXAMPLE: GetProperty by Index
-    int width = GetProperty<int>(t, 0);
+    // ########## EXAMPLE: GetValue by Index
+    int width = GetValue<int>(t, 0);
     std::cout << "Transform t values:" << std::endl;
     std::cout << "  Width: " << width << std::endl;
 
-    // ########## EXAMPLE: GetProperty by Name
-    std::vector<double> position =  GetProperty<std::vector<double>>(t, "position");
-    std::string         txt =       GetProperty<std::string>(t, "text");      
+    // ########## EXAMPLE: GetValue by Name
+    std::vector<double> position =  GetValue<std::vector<double>>(t, "position");
+    std::string         txt =       GetValue<std::string>(t, "text");      
     std::cout << "  Position X: " << position[0] << ", Position Y: " << position[1] << ", Position Z: " << position[2] << std::endl;
     std::cout << "  Text: " << txt << std::endl;
 
 
 
-    // ########## EXAMPLE: Iterating Properties
-    std::cout << "Iterating Properties: " << std::endl;
-    for (int p = 0; p < GetComponentData("Transform").property_count; ++p) {
-        std::cout << "  Property Number: " << p << ", \t Name: " << GetPropertyData(t, p).name << ", Value: ";
-        // Member variable type can be specified in your class header file using MEMBER_META_TYPE(Property_Type)
-        // This enum can easily be exapnded...
-        HashID type = GetPropertyData(t, p).hash_code;
-        if        (type == PROPERTY_TYPE_INT) {
-            std::cout << GetProperty<int>(t, p);                    
-        } else if (type == PROPERTY_TYPE_VECTOR_DOUBLE) {    
-            std::cout << GetProperty<std::vector<double>>(t, p)[0];
-        } else if (type == PROPERTY_TYPE_STRING) {
-            std::cout << GetProperty<std::string>(t, p);
+    // ########## EXAMPLE: Iterating Members
+    std::cout << "Iterating Members: " << std::endl;
+    for (int p = 0; p < GetClassData("Transform").member_count; ++p) {
+        std::cout << "  Member Index: " << p << ", Name: " << GetMemberData(t, p).name << ", Value: ";
+        HashID type = GetMemberData(t, p).hash_code;
+        if        (type == MEMBER_TYPE_INT) {
+            std::cout << GetValue<int>(t, p);                    
+        } else if (type == MEMBER_TYPE_VECTOR_DOUBLE) {    
+            std::cout << GetValue<std::vector<double>>(t, p)[0];
+        } else if (type == MEMBER_TYPE_STRING) {
+            std::cout << GetValue<std::string>(t, p);
         }
         std::cout << std::endl;
     }
 
 
 
-    // ########## EXAMPLE: SetProperty by Name (can also be called by Index)
+    // ########## EXAMPLE: SetValue by Name (can also be called by Index)
     position = { 56.0, 58.5, 60.2 };
-    SetProperty(t, "position", position);
-    std::cout << "After calling SetProperty on 'position':" << std::endl;
+    SetValue(t, "position", position);
+    std::cout << "After calling SetValue on 'position':" << std::endl;
     std::cout << "  Position X: " << t.position[0] << ", Position Y: " << t.position[1] << ", Position Z: " << t.position[2] << std::endl;
 
 
 
-    // ########## EXAMPLE: GetProperty from Unknown Types
+    // ########## EXAMPLE: GetValue from Unknown Types
     //  
     //  If using with entity component system its possible you may not have access to class type at runtime. 
     //  Somewhere in code when your class is initialized store the class HashID:                              
     //
-            HashID hash = GetComponentData(t).hash_code;
+            HashID hash = GetClassData(t).hash_code;
             void*  component_ptr = (void*)(&t);
     //  
     //  Later if your class is stored as void* in an array/vector/list with other classes, you may still get
     //  the member variables using only the Component type hash code:                                                                         
     //
-    std::cout << "Getting Property from unknown class type:" << std::endl;
-    HashID type = GetPropertyData(hash, 3).hash_code;
-    if (type == PROPERTY_TYPE_VECTOR_DOUBLE) {
-        std::vector<double> rotation = GetProperty<std::vector<double>>(component_ptr, hash, 3);
+    std::cout << "Getting member variable value from unknown class type:" << std::endl;
+    HashID type = GetMemberData(hash, 3).hash_code;
+    if (type == MEMBER_TYPE_VECTOR_DOUBLE) {
+        std::vector<double> rotation = GetValue<std::vector<double>>(component_ptr, hash, 3);
         std::cout << "  Rotation X: " << rotation[0] << ", Rotation Y: " << rotation[1] << ", Rotation Z: " << rotation[2] << std::endl;
     }
 

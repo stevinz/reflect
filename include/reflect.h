@@ -30,21 +30,21 @@
 // INSTALLATION:
 // - Copy 'reflect.h' to project
 //
-// - !!!!! In ONE cpp file, define REGISTER_REFLECTION:
+// - In ONE cpp file, define REGISTER_REFLECTION:
 //      #define REGISTER_REFLECTION
 //      #include "reflect.h"
 //      #include "my_struct_1.h"
 //      #include "my_struct_2.h"
 //      #include etc...
 //
-// - Classes / structs should be simple aggregate types (standard layout)
+// - Classes / Structs should be simple aggregate types (standard layout)
 //      - No private or protected non-static data members
 //      - No user-declared / user-provided constructors 
 //      - No virtual member functions
 //      - No default member initializers (invalid in C++11, okay in C++14 and higher)
 //      - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info 
 //
-// - !!!!! BEFORE using reflection, initiate call to 'InitializeReflection()'
+// - BEFORE using reflection, make one call to 'InitializeReflection()'
 //
 //####################################################################################
 //
@@ -60,7 +60,7 @@
 //              REFLECT();
 //          }
 //          #ifdef REGISTER_REFLECTION
-//              REFLECT_STRUCT(Transform)
+//              REFLECT_CLASS(Transform)
 //              REFLECT_MEMBER(width)
 //              REFLECT_MEMBER(height)
 //              REFLECT_MEMBER(position)
@@ -73,49 +73,51 @@
 //
 // IN CODE:
 //      ...
-//          Transform t { };
-//              t.width =    100;
-//              t.height =   100;
-//              t.position = std::vector<double>({1.0, 2.0, 3.0});
+//      Transform t { };
+//          t.width =    100;
+//          t.height =   100;
+//          t.position = std::vector<double>({1.0, 2.0, 3.0});
 //      ...
 //
-//      META DATA
+//      TYPE DATA
 //      ---------
-//      - Component Meta Data
-//          GetComponentData<Transform>().property_count;       // By class 
-//          GetComponentData(t).property_count                  // By instance
-//          GetComponentData("Transform").property_count;       // By name
+//      - Class Type Data
+//          GetClassData<Transform>().member_count;     // By class type
+//          GetClassData(t).member_count                // By class instance
+//          GetClassData(hash_id).member_count          // By class hash id
+//          GetClassData("Transform").member_count;     // By class name
 //
-//      - Property Meta Data
-//          GetPropertyData<Transform>("width").description;    // By class, property name
-//          GetPropertyData<Transform>(0).description;          // By class, property index
-//          GetPropertyData(t, "position").description;         // By instance, property name 
-//          GetPropertyData(t, 2).description;                  // By instance, property index
+//      - Member Type Data
+//          GetMemberData<Transform>("width").name;     // By class type, member name
+//          GetMemberData<Transform>(0).name;           // By class type, member index
+//          GetMemberData(t, "width").name;             // By class instance, member name 
+//          GetMemberData(t, 0).name;                   // By class instance, member index
+//          GetMemberData(hash_id, "width").name        // By class hash id, member name 
+//          GetMemberData(hash_id, 0).name;             // By class hash id, member index
 //
+//      GET / SET MEMBER VARIABLE
+//      -------------------------
+//      Before calling GetValue<>(), member variable type can be checked by comparing to
+//      predefined constants. These can easily be added to under "Member_ ypes" below...
 //
-//      GET / SET PROPERTY
-//      ------------------
-//      Before calling GetProperty<>(), member variable type can be checked by comparing to
-//      predefined constants. These can easily be added to under "Property Types" below...
-//
-//      - GetProperty by Index
-//          HashID type = GetPropertyData(t, 0).hash_code;
-//          if (type == PROPERTY_TYPE_INT) {
-//              int width = GetProperty<int>(t, 0);
+//      - GetValue by Index
+//          HashID type = GetMemberData(t, 0).hash_code;
+//          if (type == MEMBER_TYPE_INT) {
+//              int width = GetValue<int>(t, 0);
 //          }
 //
-//      - GetProperty by Name
-//          HashID type = GetPropertyData(t, "position").hash_code;
-//          if (type == PROPERTY_VECTOR_DOUBLE) {
-//              std::vector<double> position = GetProperty<std::vector<double>>(t, "position");
+//      - GetValue by Name
+//          HashID type = GetMemberData(t, "position").hash_code;
+//          if (type == MEMBER_VECTOR_DOUBLE) {
+//              std::vector<double> position = GetValue<std::vector<double>>(t, "position");
 //          }
 //
-//      - SetProperty by Index
+//      - SetValue by Index
 //          int new_width = 50;
-//          SetProperty(t, 0, new_width);
-//      - SetProperty by Name
+//          SetValue(t, 0, new_width);
+//      - SetValue by Name
 //          std::vector<double> new_position = { 56.0, 58.5, 60.2 };
-//          SetProperty(t, "position", new_position);
+//          SetValue(t, "position", new_position);
 //
 //
 //
@@ -130,80 +132,93 @@
 #include <typeinfo>
 #include <vector>
 
-// Type Definitions
+//####################################################################################
+//##    Sample Meta Data Enum
+//############################
+enum Meta_Data {
+    META_DATA_DESCRIPTION,
+    META_DATA_COLOR,
+    // etc...
+};
+
+//####################################################################################
+//##    Type Definitions
+//############################
 using HashID =          size_t;                                                     // This comes from typeid(OBJECT).hash_code()
-using Functions =       std::vector<std::function<void()>>;                         // List of funcitons
+using Functions =       std::vector<std::function<void()>>;                         // List of functions
+using IntMap =          std::unordered_map<int, std::string>;                       // Meta data int key map
+using StringMap =       std::map<std::string, std::string>;                         // Meta data string key map
 
 //####################################################################################
-//##    Property Types
+//##    Member Types
 //############################
-const HashID PROPERTY_TYPE_UNKNOWN =        0;
-const HashID PROPERTY_TYPE_BOOL =           typeid(bool).hash_code();
-const HashID PROPERTY_TYPE_CHAR =           typeid(char).hash_code();
-const HashID PROPERTY_TYPE_STRING =         typeid(std::string).hash_code();
-const HashID PROPERTY_TYPE_INT =            typeid(int).hash_code();
-const HashID PROPERTY_TYPE_UINT =           typeid(unsigned int).hash_code();
-const HashID PROPERTY_TYPE_LONG =           typeid(long).hash_code();
-const HashID PROPERTY_TYPE_FLOAT =          typeid(float).hash_code();
-const HashID PROPERTY_TYPE_DOUBLE =         typeid(double).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_BOOL =    typeid(std::vector<bool>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_CHAR =    typeid(std::vector<char>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_STRING =  typeid(std::vector<std::string>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_INT =     typeid(std::vector<int>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_UINT =    typeid(std::vector<unsigned int>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_LONG =    typeid(std::vector<long>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_FLOAT =   typeid(std::vector<float>).hash_code();
-const HashID PROPERTY_TYPE_VECTOR_DOUBLE =  typeid(std::vector<double>).hash_code();
+const HashID MEMBER_TYPE_UNKNOWN =          0;
+const HashID MEMBER_TYPE_BOOL =             typeid(bool).hash_code();
+const HashID MEMBER_TYPE_CHAR =             typeid(char).hash_code();
+const HashID MEMBER_TYPE_STRING =           typeid(std::string).hash_code();
+const HashID MEMBER_TYPE_INT =              typeid(int).hash_code();
+const HashID MEMBER_TYPE_UINT =             typeid(unsigned int).hash_code();
+const HashID MEMBER_TYPE_LONG =             typeid(long).hash_code();
+const HashID MEMBER_TYPE_FLOAT =            typeid(float).hash_code();
+const HashID MEMBER_TYPE_DOUBLE =           typeid(double).hash_code();
+const HashID MEMBER_TYPE_VECTOR_BOOL =      typeid(std::vector<bool>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_CHAR =      typeid(std::vector<char>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_STRING =    typeid(std::vector<std::string>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_INT =       typeid(std::vector<int>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_UINT =      typeid(std::vector<unsigned int>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_LONG =      typeid(std::vector<long>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_FLOAT =     typeid(std::vector<float>).hash_code();
+const HashID MEMBER_TYPE_VECTOR_DOUBLE =    typeid(std::vector<double>).hash_code();
 // ...
-// easy to add more predefined types here
-// these predifined types allow for easy identification before calling: GetProperty<type>()
+// Easy to add more predefined types here...
+// These predifined types allow for easy identification before calling: GetValue<type>()
 // ...
 
 //####################################################################################
-//##    Component / Property data structs
+//##    Class / Member data structs
 //############################
-struct ComponentData {
-    // ----- Data Handled by Library
+struct ClassData {
     std::string         name            { "unknown" };                              // Actual struct / class name 
-    HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of Component
-    int                 property_count  { 0 };                                      // Number of registered properties of class
-    // ----- Following Meta Data Can Be User Set -----
-    std::string         title           { "unknown" };                              // Display name of this Component
-    std::string         description     { "No component description." };            // Description of this Component
+    std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying to user
+    HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of class
+    int                 member_count    { 0 };                                      // Number of registered member variables of class
+    IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
+    StringMap           meta_string_map { };                                        // Map to hold user meta data by string key
 };
 
-struct PropertyData {
-    // ----- Data Handled by Library
+struct MemberData {
     std::string         name            { "unknown" };                              // Actual member variable name 
+    std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying to user
     HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of member variable
-    int                 offset          { 0 };                                      // char* offset of member variable within parent component struct
-    size_t              size            { 0 };                                      // size of actual type of Property
-    // ----- Following Meta Data Can Be User Set -----
-    std::string         title           { "unknown" };                              // Display name of this Property
-    std::string         description     { "No property description." };             // Description of this Property
+    int                 offset          { 0 };                                      // char* offset of member variable within parent class / struct
+    size_t              size            { 0 };                                      // size of actual type of member variable
+    IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
+    StringMap           meta_string_map { };                                        // Map to hold user meta data by string key
 };
+static ClassData        unknown_class   { };                                        // Empty ClassData to return by reference on GetClassData() fail
+static MemberData       unknown_member   { };                                       // Empty MemberData to return by reference on GetMemberData() fail
 
 //####################################################################################
 //##    DrReflect
-//##        Singleton to hold Component / Property reflection and meta data
+//##        Singleton to hold Class / Member reflection and meta data
 //############################
 class DrReflect 
 {
 public:
-    using PropertyMap = std::map<int, PropertyData>;
-    std::unordered_map<HashID, ComponentData>      components      { };             // Holds data about DrComponent / ECS Component structs
-    std::unordered_map<HashID, PropertyMap>        properties      { };             // Holds data about Properies (of Components)
+    using MemberMap = std::map<int, MemberData>;
+    std::unordered_map<HashID, ClassData>           classes         { };            // Holds data about classes / structs
+    std::unordered_map<HashID, MemberMap>           members         { };            // Holds data about member variables (of classes)
 
 public:    
-    void AddMetaComponent(ComponentData comp_data) {
-        assert(comp_data.hash_code != 0 && "Component hash code is 0, error in registration?");
-        components[comp_data.hash_code] = comp_data;
+    void AddClass(ClassData class_data) {
+        assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
+        classes[class_data.hash_code] = class_data;
     }
-    void AddMetaProperty(ComponentData comp_data, PropertyData prop_data) {
-        assert(comp_data.hash_code != 0 && "Component hash code is 0, error in registration?");
-        assert(components.find(comp_data.hash_code) != components.end() && "Component never set with AddMetaComponent before calling AddMetaProperty!");
-        properties[comp_data.hash_code][prop_data.offset] = prop_data;
-        components[comp_data.hash_code].property_count = properties[comp_data.hash_code].size();
+    void AddMember(ClassData class_data, MemberData member_data) {
+        assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
+        assert(classes.find(class_data.hash_code) != classes.end() && "Class never registered with AddClass before calling AddMember!");
+        members[class_data.hash_code][member_data.offset] = member_data;
+        classes[class_data.hash_code].member_count = members[class_data.hash_code].size();
     }
 };
 
@@ -216,205 +231,204 @@ extern Functions                    g_register_list;                            
 //####################################################################################
 //##    General Functions
 //############################
-void            InitializeReflection();                                             // Creates DrReflect class and registers classes and member variables
+void            InitializeReflection();                                             // Creates DrReflect instance and registers classes and member variables
 void            CreateTitle(std::string& name);                                     // Create nice display name from class / member variable names
-void            RegisterComponent(ComponentData comp_data);                         // Update Component data
-void            RegisterProperty(ComponentData comp_data, PropertyData prop_data);  // Update Property data                
-int             PropertyCount();                                                    //	
+void            RegisterClass(ClassData class_data);                                // Update class type data
+void            RegisterMember(ClassData class_data, MemberData member_data);       // Update member type data                
 
 //####################################################################################
 //##    Class / Member Registration
 //####################################################################################
 // Template wrapper to register type with DrReflect from header files
-template <typename T> void RegisterClass() { };                                                
+template <typename T> void InitiateClass() { };                                                
 
-// Call this to register class / struct type with reflection / meta data system, typename CT is Component Type
-template <typename CT>
-void RegisterComponent(ComponentData comp_data) { 
-    assert(std::is_standard_layout<CT>() && "Component is not standard layout!!");
-	g_reflect->AddMetaComponent(comp_data); 
+// Call this to register class / struct type with reflection / meta data system
+template <typename ClassType>
+void RegisterClass(ClassData class_data) { 
+    assert(std::is_standard_layout<ClassType>() && "Class is not standard layout!!");
+	g_reflect->AddClass(class_data); 
 }
 
-// Call this to register member variable with reflection / meta data system, typename PT is Property Type
-template <typename PT>
-void RegisterProperty(ComponentData comp_data, PropertyData prop_data) {
-	g_reflect->AddMetaProperty(comp_data, prop_data); 
+// Call this to register member variable with reflection / meta data system
+template <typename MemberType>
+void RegisterMember(ClassData class_data, MemberData member_data) {
+	g_reflect->AddMember(class_data, member_data); 
 } 
 
 //####################################################################################
 //##    Reflection Data Fetching
 //############################
-// #################### Component Data Fetching ####################
-// Meta Data component fetching by component Class Name
+// #################### Class Data Fetching ####################
+// Class type data fetching by class name
 template<typename T>
-ComponentData GetComponentData() {
+const ClassData& GetClassData() {
     HashID hash = typeid(T).hash_code();
-    if (g_reflect->components.find(hash) != g_reflect->components.end()) {
-        return g_reflect->components[hash];
+    if (g_reflect->classes.find(hash) != g_reflect->classes.end()) {
+        return g_reflect->classes[hash];
     } else { 
-        return ComponentData(); 
+        return unknown_class; 
     }
 }
-// Meta Data component fetching from passed in component Instance
+// Class type data fetching from passed in class instance
 template<typename T>
-ComponentData GetComponentData(T& component) {
-    return GetComponentData<T>();
+const ClassData& GetClassData(T& class_instance) {
+    return GetClassData<T>();
 }
-// Meta Data component fetching from passed in component typeid().hash_code()
-ComponentData GetComponentData(HashID hash_id);
-// Meta Data component fetching from passed in component name
-ComponentData GetComponentData(std::string component_name);
-ComponentData GetComponentData(const char* component_name);
+// Class type data fetching from passed in class typeid().hash_code()
+const ClassData& GetClassData(HashID hash_id);
+// Class type data fetching from passed in class name
+const ClassData& GetClassData(std::string class_name);
+const ClassData& GetClassData(const char* class_name);
 
-// #################### Property Data Fetching ####################
+// #################### Member Data Fetching ####################
 // -------------------------    By Index  -------------------------
-// Meta Data property fetching by member variable Index and component typeid().hash_code()
-PropertyData GetPropertyData(HashID component_hash_id, int property_number);
-// Meta Data property fetching by member variable Index and component Class Name
+// Member type data fetching by member variable index and class typeid().hash_code()
+const MemberData& GetMemberData(HashID class_hash_id, int member_index);
+// Member type data fetching by member variable index and class name
 template<typename T>
-PropertyData GetPropertyData(int property_number) {
-    HashID component_hash_id = typeid(T).hash_code();
-    return GetPropertyData(component_hash_id, property_number);   
+const MemberData& GetMemberData(int member_index) {
+    HashID class_hash_id = typeid(T).hash_code();
+    return GetMemberData(class_hash_id, member_index);   
 }
-// Meta Data property fetching by member variable Index and component Instance
+// Member type data fetching by member variable index and class instance
 template<typename T>
-PropertyData GetPropertyData(T& component, int property_number) {
-    return GetPropertyData<T>(property_number);   
+const MemberData& GetMemberData(T& class_instance, int member_index) {
+    return GetMemberData<T>(member_index);   
 }
 
 // -------------------------    By Name  -------------------------
-// Meta Data property fetching by member variable Name and component typeid().hash_code()
-PropertyData GetPropertyData(HashID component_hash_id, std::string property_name);
-// Meta Data property fetching by member variable Name and component Class Name
+// Member type data fetching by member variable Name and class typeid().hash_code()
+const MemberData& GetMemberData(HashID class_hash_id, std::string member_name);
+// Member type data fetching by member variable Name and class name
 template<typename T>
-PropertyData GetPropertyData(std::string property_name) {
-    HashID component_hash_id = typeid(T).hash_code();
-    return GetPropertyData(component_hash_id, property_name); 
+const MemberData& GetMemberData(std::string member_name) {
+    HashID class_hash_id = typeid(T).hash_code();
+    return GetMemberData(class_hash_id, member_name); 
 }
-// Meta Data property fetching by member variable Name and component Instance
+// Member type data fetching by member variable name and class instance
 template<typename T>
-PropertyData GetPropertyData(T& component, std::string property_name) {
-    return GetPropertyData<T>(property_name); 
+const MemberData& GetMemberData(T& class_instance, std::string member_name) {
+    return GetMemberData<T>(member_name); 
 }
 
-// #################### Property Value Fetching ####################
+// #################### Member Variable Value Fetching ####################
 // Casting from void*, not fully standardized across compilers?
-//      DrVec3 rotation = *(DrVec3*)(component_ptr + prop_data.offset);
+//      DrVec3 rotation = *(DrVec3*)(class_ptr + member_data.offset);
 // Memcpy
 //      DrVec3 value;
-//      memcpy(&value, component_ptr + prop_data.offset, prop_data.size);
+//      memcpy(&value, class_ptr + member_data.offset, member_data.size);
 // C++ way
 //      static constexpr auto offset_rotation = &Transform2D::rotation;
 //      DrVec3 rotation = ((&et)->*off_rot);
 // ##### Internal casting function
 template<typename ReturnType>
-ReturnType InternalGetProperty(char* component_ptr, PropertyData prop_data) {
-    assert(prop_data.name != "unknown" && "Could not find property by name!");
-    assert(prop_data.hash_code == typeid(ReturnType).hash_code() && "Did not request proper return type!");
-    return *(reinterpret_cast<ReturnType*>(component_ptr + prop_data.offset));
+ReturnType InternalGetValue(char* class_ptr, MemberData member_data) {
+    assert(member_data.name != "unknown" && "Could not find member variable by name!");
+    assert(member_data.hash_code == typeid(ReturnType).hash_code() && "Did not request correct return type!");
+    return *(reinterpret_cast<ReturnType*>(class_ptr + member_data.offset));
 }
-// Get member variable value from Component by Index
-template<typename ReturnType, typename ComponentType>
-ReturnType GetProperty(ComponentType& component, int property_number) {
-    PropertyData prop_data = GetPropertyData<ComponentType>(property_number);
-    return InternalGetProperty<ReturnType>((char*)(&component), GetPropertyData<ComponentType>(property_number));
+// Get member variable value from class by index
+template<typename ReturnType, typename ClassType>
+ReturnType GetValue(ClassType& class_instance, int member_index) {
+    MemberData member_data = GetMemberData<ClassType>(member_index);
+    return InternalGetValue<ReturnType>((char*)(&class_instance), GetMemberData<ClassType>(member_index));
 }
-// Get member variable value from Component by Name
-template<typename ReturnType, typename ComponentType>
-ReturnType GetProperty(ComponentType& component, std::string property_name) {
-    return InternalGetProperty<ReturnType>((char*)(&component), GetPropertyData<ComponentType>(property_name));
+// Get member variable value from class by name
+template<typename ReturnType, typename ClassType>
+ReturnType GetValue(ClassType& class_instance, std::string member_name) {
+    return InternalGetValue<ReturnType>((char*)(&class_instance), GetMemberData<ClassType>(member_name));
 }
-// Get member variable value using Component HashID by Index
+// Get member variable value using class HashID by index
 template<typename ReturnType>
-ReturnType GetProperty(void* component, HashID component_hash_id, int property_number) {
-    return InternalGetProperty<ReturnType>((char*)(component), GetPropertyData(component_hash_id, property_number));
+ReturnType GetValue(void* class_ptr, HashID class_hash_id, int member_index) {
+    return InternalGetValue<ReturnType>((char*)(class_ptr), GetMemberData(class_hash_id, member_index));
 }
-// Get member variable value using Component HashID by Name
+// Get member variable value using class HashID by name
 template<typename ReturnType>
-ReturnType GetProperty(void* component, HashID component_hash_id, std::string property_name) {
-    return InternalGetProperty<ReturnType>((char*)(component), GetPropertyData(component_hash_id, property_name));
+ReturnType GetValue(void* class_ptr, HashID class_hash_id, std::string member_name) {
+    return InternalGetValue<ReturnType>((char*)(class_ptr), GetMemberData(class_hash_id, member_name));
 }
 
-// #################### Property Value Setting ####################
+// #################### Member Variable Value Setting ####################
 // Memcpy
 //     char *p = block;
 //     memcpy(p + offset, &val, sizeof(val));
 // ##### Internal casting function
-template<typename PropertyType>
-void InternalSetProperty(char* component_ptr, PropertyData prop_data, PropertyType value) {
-    assert(prop_data.name != "unknown" && "Could not find property by name!");
-    assert(prop_data.hash_code == typeid(PropertyType).hash_code() && "Did not request proper value type!");
-    PropertyType& existing = *(reinterpret_cast<PropertyType*>(component_ptr + prop_data.offset));
+template<typename MemberType>
+void InternalSetValue(char* class_ptr, MemberData member_data, MemberType value) {
+    assert(member_data.name != "unknown" && "Could not find member variable!");
+    assert(member_data.hash_code == typeid(MemberType).hash_code() && "Did not pass correct value type!");
+    MemberType& existing = *(reinterpret_cast<MemberType*>(class_ptr + member_data.offset));
     existing = value;
 }
-// Set member variable of component by Index
-template<typename PropertyType, typename ComponentType>
-void SetProperty(ComponentType& component, int property_number, PropertyType value) {
-    InternalSetProperty<PropertyType>((char*)(&component), GetPropertyData<ComponentType>(property_number), value);
+// Set member variable of class by index
+template<typename MemberType, typename ClassType>
+void SetValue(ClassType& class_instance, int member_index, MemberType value) {
+    InternalSetValue<MemberType>((char*)(&class_instance), GetMemberData<ClassType>(member_index), value);
 }
-// Set member variable of component by Name
-template<typename PropertyType, typename ComponentType>
-void SetProperty(ComponentType& component, std::string property_name, PropertyType value) {
-    InternalSetProperty<PropertyType>((char*)(&component), GetPropertyData<ComponentType>(property_name), value);
+// Set member variable of class by name
+template<typename MemberType, typename ClassType>
+void SetValue(ClassType& class_instance, std::string member_name, MemberType value) {
+    InternalSetValue<MemberType>((char*)(&class_instance), GetMemberData<ClassType>(member_name), value);
 }
-// Set member variable value using Component HashID by Index
-template<typename PropertyType>
-void SetProperty(void* component, HashID component_hash_id, int property_number, PropertyType value) {
-    InternalSetProperty<PropertyType>((char*)(component), GetPropertyData(component_hash_id, property_number), value);
+// Set member variable value using class HashID by index
+template<typename MemberType>
+void SetValue(void* class_ptr, HashID class_hash_id, int member_index, MemberType value) {
+    InternalSetValue<MemberType>((char*)(class_ptr), GetMemberData(class_hash_id, member_index), value);
 }
-// Set member variable value using Component HashID by Name
-template<typename PropertyType>
-void SetProperty(void* component, HashID component_hash_id, std::string property_name, PropertyType value) {
-    InternalSetProperty<PropertyType>((char*)(component), GetPropertyData(component_hash_id, property_name), value);
+// Set member variable value using class HashID by name
+template<typename MemberType>
+void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, MemberType value) {
+    InternalSetValue<MemberType>((char*)(class_ptr), GetMemberData(class_hash_id, member_name), value);
 }
 
 //####################################################################################
 //##    Macros for Reflection Registration
 //####################################################################################
-// Static variable added to class allows Registration Function to be added to list of Components to be registered
+// Static variable added to class allows registration function to be added to list of classes to be registered
 #define REFLECT() \
     static bool reflection; \
     static bool initReflection();
 
 // Define Registration Function
-#define REFLECT_STRUCT(TYPE) \
-    template <> void RegisterClass<TYPE>() { \
+#define REFLECT_CLASS(TYPE) \
+    template <> void InitiateClass<TYPE>() { \
         using T = TYPE; \
-        ComponentData comp {}; \
-			comp.name = #TYPE; \
-			comp.hash_code = typeid(TYPE).hash_code(); \
-			comp.title = #TYPE; \
-            CreateTitle(comp.title); \
-		RegisterComponent<T>(comp); \
-		int property_number = 0; \
-		std::unordered_map<int, PropertyData> props { };
+        ClassData class_data {}; \
+			class_data.name = #TYPE; \
+			class_data.hash_code = typeid(TYPE).hash_code(); \
+			class_data.title = #TYPE; \
+            CreateTitle(class_data.title); \
+		RegisterClass<T>(class_data); \
+		int member_index = 0; \
+		std::unordered_map<int, MemberData> mbrs { };
 
 // Meta data functions
-#define STRUCT_META_TITLE(STRING) 		comp.title = 		#STRING;	RegisterComponent(comp);
-#define STRUCT_META_DESCRIPTION(STRING) comp.description = 	#STRING; 	RegisterComponent(comp);
+#define CLASS_META_TITLE(STRING) 		class_data.title = 		    #STRING;	RegisterClass(class_data);
+//#define CLASS_META_DESCRIPTION(STRING)  class_data.description = 	#STRING; 	RegisterClass(class_data);
 
-// Property Registration
+// Member Registration
 #define REFLECT_MEMBER(MEMBER) \
-		property_number++; \
-		props[property_number] = PropertyData(); \
-		props[property_number].name = #MEMBER; \
-		props[property_number].hash_code = typeid(T::MEMBER).hash_code(); \
-		props[property_number].offset = offsetof(T, MEMBER); \
-		props[property_number].size = sizeof(T::MEMBER); \
-		props[property_number].title = #MEMBER; \
-        CreateTitle(props[property_number].title); \
-		RegisterProperty<decltype(T::MEMBER)>(comp, props[property_number]); 
+		member_index++; \
+		mbrs[member_index] = MemberData(); \
+		mbrs[member_index].name = #MEMBER; \
+		mbrs[member_index].hash_code = typeid(T::MEMBER).hash_code(); \
+		mbrs[member_index].offset = offsetof(T, MEMBER); \
+		mbrs[member_index].size = sizeof(T::MEMBER); \
+		mbrs[member_index].title = #MEMBER; \
+        CreateTitle(mbrs[member_index].title); \
+		RegisterMember<decltype(T::MEMBER)>(class_data, mbrs[member_index]); 
 
 // Meta data functions
-#define MEMBER_META_TITLE(STRING) 		props[property_number].title = 			#STRING;	RegisterProperty(comp, props[property_number]); 
-#define MEMBER_META_DESCRIPTION(STRING) props[property_number].description = 	#STRING; 	RegisterProperty(comp, props[property_number]); 
+#define MEMBER_META_TITLE(STRING) 		mbrs[member_index].title = 		    #STRING;	RegisterMember(class_data, mbrs[member_index]); 
+//#define MEMBER_META_DESCRIPTION(STRING) mbrs[member_index].description = 	#STRING; 	RegisterMember(class_data, mbrs[member_index]); 
 
-// Static definitions add Registration Function to list of Components to be registered
+// Static definitions add registration function to list of classes to be registered
 #define REFLECT_END(TYPE) \
     } \
     bool TYPE::reflection { initReflection() }; \
     bool TYPE::initReflection() { \
-        g_register_list.push_back(std::bind(&RegisterClass<TYPE>)); \
+        g_register_list.push_back(std::bind(&InitiateClass<TYPE>)); \
         return true; \
     }
 
@@ -432,7 +446,7 @@ std::shared_ptr<DrReflect>      g_reflect           { nullptr };                
 Functions                       g_register_list     { };                            // Keeps list of registration functions
 
 // ########## General Registration ##########
-// Initializes global reflection object, registers classes with Reflection System
+// Initializes global reflection object, registers classes with reflection system
 void InitializeReflection() {
     // Create Singleton
     g_reflect = std::make_shared<DrReflect>();
@@ -453,52 +467,52 @@ void CreateTitle(std::string& name) {
 }
 
 // ########## Class / Member Registration ##########
-// Update Component data
-void RegisterComponent(ComponentData comp_data) { 
-	g_reflect->AddMetaComponent(comp_data); 
+// Update class type data
+void RegisterClass(ClassData class_data) { 
+	g_reflect->AddClass(class_data); 
 }
 
-// Update Property data
-void RegisterProperty(ComponentData comp_data, PropertyData prop_data) {                     
-	g_reflect->AddMetaProperty(comp_data, prop_data); 
+// Update member type data
+void RegisterMember(ClassData class_data, MemberData member_data) {                     
+	g_reflect->AddMember(class_data, member_data); 
 } 
 
-// ########## Component Data Fetching ##########
-// Meta Data component fetching from passed in component typeid().hash_code()
-ComponentData GetComponentData(HashID hash_id) {
-    for (auto& pair : g_reflect->components) {
+// ########## Class Data Fetching ##########
+// Class type data fetching from passed in class typeid().hash_code()
+const ClassData& GetClassData(HashID hash_id) {
+    for (auto& pair : g_reflect->classes) {
         if (pair.first == hash_id) return pair.second;
     }
-    return ComponentData();
+    return unknown_class;
 }
-// Meta Data component fetching from passed in component name
-ComponentData GetComponentData(std::string component_name) {
-    for (auto& pair : g_reflect->components) {
-        if (pair.second.name == component_name) return pair.second;
+// Class type data fetching from passed in class name
+const ClassData& GetClassData(std::string class_name) {
+    for (auto& pair : g_reflect->classes) {
+        if (pair.second.name == class_name) return pair.second;
     }
-    return ComponentData();
+    return unknown_class;
 }
-// Meta Data component fetching from passed in component name
-ComponentData GetComponentData(const char* component_name) {
-    return GetComponentData(std::string(component_name));
+// Class type data fetching from passed in class name
+const ClassData& GetClassData(const char* class_name) {
+    return GetClassData(std::string(class_name));
 }
 
-// ########## Property Data Fetching ##########
-// Meta Data property fetching by member variable Index and component typeid().hash_code()
-PropertyData GetPropertyData(HashID component_hash_id, int property_number) {
+// ########## Member Data Fetching ##########
+// Member type data fetching by member variable index and class typeid().hash_code()
+const MemberData& GetMemberData(HashID class_hash_id, int member_index) {
     int count = 0;
-    for (auto& prop : g_reflect->properties[component_hash_id]) {
-        if (count == property_number) return prop.second;
+    for (auto& member : g_reflect->members[class_hash_id]) {
+        if (count == member_index) return member.second;
         ++count;
     }
-    return PropertyData();    
+    return unknown_member;
 }
-// Meta Data property fetching by member variable Name and component typeid().hash_code()
-PropertyData GetPropertyData(HashID component_hash_id, std::string property_name) {
-    for (auto& prop : g_reflect->properties[component_hash_id]) {
-        if (prop.second.name == property_name) return prop.second;
+// Member type data fetching by member variable name and class typeid().hash_code()
+const MemberData& GetMemberData(HashID class_hash_id, std::string member_name) {
+    for (auto& member : g_reflect->members[class_hash_id]) {
+        if (member.second.name == member_name) return member.second;
     }
-    return PropertyData();
+    return unknown_member;
 }
 
 #endif  // REGISTER_REFLECTION
