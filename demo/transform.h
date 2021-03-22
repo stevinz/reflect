@@ -34,7 +34,7 @@ struct Transform2D {
 //############################
 #ifdef REGISTER_REFLECTION
 	REFLECT_CLASS(Transform2D)
-	//	CLASS_META_DESCRIPTION("Describes the location and positioning of an object.")
+		CLASS_META_DATA(META_DATA_DESCRIPTION, "Describes the location and positioning of an object.")
 	REFLECT_MEMBER(width)
 	REFLECT_MEMBER(height)
 	REFLECT_MEMBER(position)

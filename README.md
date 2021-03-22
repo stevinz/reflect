@@ -1,6 +1,6 @@
 # Reflect
 
-Small, flexible single header file library for aggregate (struct / class) runtime reflection using C++ 11 features. Minimal STL usage, no other dependencies.
+Small, flexible, single header library for aggregate (struct / class) runtime reflection and meta data using C++ 11 features. Minimal STL usage, no other dependencies.
 
 -----
 ## Installation
@@ -92,7 +92,7 @@ Small, flexible single header file library for aggregate (struct / class) runtim
 
     // GetValue by Name
     HashID member_type = GetMemberData(t, "position").hash_code;
-    if (member_type == MEMBER_VECTOR_DOUBLE) {
+    if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
         std::vector<double> position = GetValue<std::vector<double>>(t, "position");
     }
 
@@ -105,7 +105,7 @@ Small, flexible single header file library for aggregate (struct / class) runtim
 
     // SetValue by Name
     HashID member_type = GetMemberData(t, "position").hash_code;
-    if (member_type == MEMBER_VECTOR_DOUBLE) {
+    if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
         std::vector<double> new_position = { 56.0, 58.5, 60.2 };
         SetValue(t, "position", new_position);
     }

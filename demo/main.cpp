@@ -46,24 +46,29 @@ int main(int argc, char* argv[]) {
 
 
     // ########## Store HashID for later
-    HashID transform_id = CreateHashID<Transform2D>();
+    HashID t_hash_id = CreateHashID<Transform2D>();
 
 
     // ########## EXAMPLE: Get class type data by class type / instance / hash id / name
     std::cout << "Class Data by Type     - Name:    " << GetClassData<Transform2D>().name       << std::endl;
     std::cout << "Class Data by Instance - Members: " << GetClassData(t).member_count           << std::endl;
-    std::cout << "Class Data by HashID   - Title:   " << GetClassData(transform_id).title       << std::endl;
+    std::cout << "Class Data by HashID   - Title:   " << GetClassData(t_hash_id).title          << std::endl;
     std::cout << "Class Data by Name     - HashID:  " << GetClassData("Transform2D").hash_code  << std::endl;
 
 
     // ########## EXAMPLE: Get member type data by member variable index / name
-    std::cout << "By Class Type, Member Index:      " << GetMemberData<Transform2D>(t, 2).name           << std::endl;
-    std::cout << "By Class Type, Member Name:       " << GetMemberData<Transform2D>("position").index    << std::endl;
-    std::cout << "By Class Instance, Member Index:  " << GetMemberData(t, 2).name                        << std::endl;
-    std::cout << "By Class Instance, Member Name:   " << GetMemberData(t, "position").index              << std::endl;
-    std::cout << "By Class HashID, Member Index:    " << GetMemberData(transform_id, 2).name             << std::endl;
-    std::cout << "By Class HashID, Member Name:     " << GetMemberData(transform_id, "position").index   << std::endl;
+    std::cout << "By Class Type, Member Index:      " << GetMemberData<Transform2D>(t, 2).name          << std::endl;
+    std::cout << "By Class Type, Member Name:       " << GetMemberData<Transform2D>("position").index   << std::endl;
+    std::cout << "By Class Instance, Member Index:  " << GetMemberData(t, 2).name                       << std::endl;
+    std::cout << "By Class Instance, Member Name:   " << GetMemberData(t, "position").index             << std::endl;
+    std::cout << "By Class HashID, Member Index:    " << GetMemberData(t_hash_id, 2).name               << std::endl;
+    std::cout << "By Class HashID, Member Name:     " << GetMemberData(t_hash_id, "position").index     << std::endl;
     
+
+    // ########## EXAMPLE: Class meta data
+    std::string description = GetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION);
+    std::cout << "Class Meta Data - Description: " << description << std::endl;
+
 
     // ########## Get Values
     std::cout << "Transform2D instance 't' member variable values:" << std::endl;
@@ -85,10 +90,10 @@ int main(int argc, char* argv[]) {
     }
 
     // EXAMPLE: GetValue by void* class, class hash id, and member variable name
-    member_type = GetMemberData(transform_id, "text").hash_code;
+    member_type = GetMemberData(t_hash_id, "text").hash_code;
     if (member_type == MEMBER_TYPE_STRING) {
-        std::string txt = GetValue<std::string>(&t, transform_id, "text");
-        std::cout << "  " << GetMemberData(transform_id, "text").title << ": " << txt << std::endl;
+        std::string txt = GetValue<std::string>(&t, t_hash_id, "text");
+        std::cout << "  " << GetMemberData(t_hash_id, "text").title << ": " << txt << std::endl;
     }
 
 
