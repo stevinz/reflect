@@ -127,7 +127,11 @@
 //              SetValue(t, "position", new_position);
 //          }
 //
+//####################################################################################
 //
+//      Visit (https://github.com/stevinz/reflect) for more detailed instructions
+//
+//####################################################################################
 #ifndef DR_REFLECT_H
 #define DR_REFLECT_H
 
@@ -258,6 +262,12 @@ void            SetClassMeta(ClassData& class_data, int key, std::string data);
 void            SetClassMeta(ClassData& class_data, std::string key, std::string data);
 std::string     GetClassMeta(ClassData& class_data, int key);
 std::string     GetClassMeta(ClassData& class_data, std::string key);
+
+// Member meta data
+void            SetMemberMeta(MemberData& member_data, int key, std::string data);
+void            SetMemberMeta(MemberData& member_data, std::string key, std::string data);
+std::string     GetMemberMeta(MemberData& member_data, int key);
+std::string     GetMemberMeta(MemberData& member_data, std::string key);
 
 //####################################################################################
 //##    Class / Member Registration
@@ -431,7 +441,7 @@ void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, Me
         class_data.title = #STRING;	\
         RegisterClass(class_data);
 #define CLASS_META_DATA(KEY,VALUE) \
-        SetClassMeta(class_data,KEY,VALUE); \
+        SetClassMeta(class_data, KEY, VALUE); \
         RegisterClass(class_data);
 
 // Member Registration
@@ -450,6 +460,9 @@ void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, Me
 // Meta data functions
 #define MEMBER_META_TITLE(STRING) \
         mbrs[member_index].title = #STRING;	\
+        RegisterMember(class_data, mbrs[member_index]);
+#define MEMBER_META_DATA(KEY,VALUE) \
+        SetMemberMeta(mbrs[member_index], KEY, VALUE); \
         RegisterMember(class_data, mbrs[member_index]);
 
 //#define MEMBER_META_DESCRIPTION(STRING) mbrs[member_index].description = 	#STRING; 	RegisterMember(class_data, mbrs[member_index]); 
@@ -585,6 +598,28 @@ std::string GetClassMeta(ClassData& class_data, std::string key) {
     if (class_data.hash_code != 0) {
         if (class_data.meta_string_map.find(key) != class_data.meta_string_map.end())
             return class_data.meta_string_map[key];
+    }
+    return "";
+}
+// Set member meta data
+void SetMemberMeta(MemberData& member_data, int key, std::string data) {
+    if (member_data.hash_code != 0) member_data.meta_int_map[key] = data;
+}
+void SetMemberMeta(MemberData& member_data, std::string key, std::string data) {
+    if (member_data.hash_code != 0) member_data.meta_string_map[key] = data;
+}
+// Get member meta data
+std::string GetMemberMeta(MemberData& member_data, int key) {
+    if (member_data.hash_code != 0) {
+        if (member_data.meta_int_map.find(key) != member_data.meta_int_map.end())
+            return member_data.meta_int_map[key];
+    }
+    return "";
+}
+std::string GetMemberMeta(MemberData& member_data, std::string key) {
+    if (member_data.hash_code != 0) {
+        if (member_data.meta_string_map.find(key) != member_data.meta_string_map.end())
+            return member_data.meta_string_map[key];
     }
     return "";
 }

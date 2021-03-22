@@ -65,9 +65,15 @@ int main(int argc, char* argv[]) {
     std::cout << "By Class HashID, Member Name:     " << GetMemberData(t_hash_id, "position").index     << std::endl;
     
 
-    // ########## EXAMPLE: Class meta data
-    std::string description = GetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION);
-    std::cout << "Class Meta Data - Description: " << description << std::endl;
+    // ########## EXAMPLE: Meta Data
+    // Class meta data
+    std::string description {};
+    description = GetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION);
+    std::cout << "Class Meta Data -  Description: " << description << std::endl;
+
+    // Member meta data
+    description = GetMemberMeta(GetMemberData<Transform2D>("position"), META_DATA_DESCRIPTION);
+    std::cout << "Member Meta Data - Description: " << description << std::endl;
 
 
     // ########## Get Values

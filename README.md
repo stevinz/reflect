@@ -64,7 +64,8 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
         t.position = std::vector<double>({1.0, 2.0, 3.0});
         t.text = "Hello world!";
 ```
-### Meta Data
+
+### Type Data Object
 ```cpp
     // Class Type Data
     GetClassData<Transform2D>().member_count;   // By class type
@@ -149,6 +150,44 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
         std::cout << ", Rotation Y: " << rotation[1];
         std::cout << ", Rotation Z: " << rotation[2];
     }
+```
+
+-----
+## User Meta Data
+### Registration in Header File, example: "transform.h"
+- Meta data can by stored as std::string within a class or member type. Set user meta data at compile time using CLASS_META_DATA and MEMBER_META_DATA in the class header file with (int, string) or (sting, string) pairs:
+```cpp
+    #ifdef REGISTER_REFLECTION
+        REFLECT_CLASS(Transform2D)
+            CLASS_META_DATA(META_DATA_DESCRIPTION, "Describes object in 2D space.")
+            CLASS_META_DATA("icon", "assets/transform.png")
+        REFLECT_MEMBER(width)
+            MEMBER_META_DATA(META_DATA_DESCRIPTION, "Width of this object.")
+        REFLECT_MEMBER(height)
+            MEMBER_META_DATA(META_DATA_DESCRIPTION, "Height of this object.")
+        REFLECT_MEMBER(position)
+            MEMBER_META_DATA(META_DATA_HIDDEN, "true")
+            MEMBER_META_DATA("tooltip", "Pos")
+        REFLECT_END(Transform2D)
+    #endif
+```
+
+### Get / Set Meta Data
+- Pass a ClassData or MemberData type object (this can be retrieved many different ways as shown earlier) to the meta data functions to get / set meta data at runtime:
+```cpp
+    // Get class meta data
+    std::string description = GetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION);
+    std::string icon_file   = GetClassMeta(GetClassData<Transform2D>(), "icon");
+
+    // Set class meta data
+    SetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION, description);
+    SetClassMeta(GetClassData<Transform2D>(), "icon", icon_file);
+
+    // Get member meta data
+    std::string description = GetMemberMeta(GetMemberData<Transform2D>("position"), META_DATA_DESCRIPTION);
+    
+    // Set member meta data
+    SetMemberMeta(GetClassData<Transform2D>("position"), META_DATA_DESCRIPTION, description);
 ```
 
 -----

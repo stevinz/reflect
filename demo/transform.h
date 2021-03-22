@@ -39,7 +39,7 @@ struct Transform2D {
 	REFLECT_MEMBER(height)
 	REFLECT_MEMBER(position)
 		MEMBER_META_TITLE("Object Position")
-	//	MEMBER_META_DESCRIPTION("Location of an object in space.")
+		MEMBER_META_DATA(META_DATA_DESCRIPTION, "Location of an object in space.")
 	REFLECT_MEMBER(rotation)
 	REFLECT_MEMBER(scale)
 	REFLECT_MEMBER(text)
