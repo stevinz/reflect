@@ -24,14 +24,14 @@ project(reflect_demo)
 
 # glob the files, add the executable
 file(GLOB SOURCE_CODE_FILES 
-    "demo/*.c**"
+    "example/*.c**"
 )
 add_executable(${PROJECT_NAME} ${SOURCE_CODE_FILES})
 
 # include directories
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/demo)
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/example)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # determine target
 if (EXPORT_TARGET MATCHES "auto")

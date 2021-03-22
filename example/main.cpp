@@ -12,7 +12,7 @@
 //####################################################################################
 //######################## INCLUDE ALL REFLECTED CLASSES BELOW #######################
 #define REGISTER_REFLECTION        
-#include "../include/reflect.h"
+#include "reflect.h"
 
 // ##### User Structs #####
 #include "transform.h"
