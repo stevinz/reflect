@@ -113,21 +113,21 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ```
 
 -----
-## Iterating Properties
+## Iterating Members / Properties
 ```cpp
     using vec = std::vector<double>;
     int member_count = GetClassData("Transform2D").member_count;
-    for (int p = 0; p < member_count; ++p) {
-        std::cout << " Member Index: " << p << ", ";
-        std::cout << " Name: " << GetMemberData(t, p).name << ",";
+    for (int prop = 0; prop < member_count; ++prop) {
+        std::cout << " Member Index: " << prop << ", ";
+        std::cout << " Name: " << GetMemberData(t, prop).name << ",";
         std::cout << " Value: ";
-        HashID member_type = GetMemberData(t, p).hash_code;
+        HashID member_type = GetMemberData(t, prop).hash_code;
         if (member_type == MEMBER_TYPE_INT) {
-            std::cout << GetValue<int>(t, p);
+            std::cout << GetValue<int>(t, prop);
         } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-            std::cout << GetValue<vec>(t, p)[0];
+            std::cout << GetValue<vec>(t, prop)[0];
         } else if (member_type == MEMBER_TYPE_STRING) {
-            std::cout << GetValue<std::string>(t, p);
+            std::cout << GetValue<std::string>(t, prop);
         }
         std::cout << std::endl;
     }
