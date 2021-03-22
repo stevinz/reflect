@@ -173,21 +173,24 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ```
 
 ### Get / Set Meta Data
-- Pass a ClassData or MemberData type object (this can be retrieved many different ways as shown earlier) to the meta data functions to get / set meta data at runtime:
+- By reference, pass a ClassData or MemberData type data object (this can be retrieved many different ways as shown earlier) to the meta data functions to get / set meta data at runtime:
 ```cpp
     // Get class meta data
-    std::string description = GetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION);
-    std::string icon_file   = GetClassMeta(GetClassData<Transform2D>(), "icon");
+    ClassData& class_data = GetClassData<Transform2D>();
+    std::string description = GetClassMeta(class_data, META_DATA_DESCRIPTION);
+    std::string icon_file   = GetClassMeta(class_data, "icon");
 
     // Set class meta data
-    SetClassMeta(GetClassData<Transform2D>(), META_DATA_DESCRIPTION, description);
-    SetClassMeta(GetClassData<Transform2D>(), "icon", icon_file);
+    SetClassMeta(class_data, META_DATA_DESCRIPTION, description);
+    SetClassMeta(class_data, "icon", icon_file);
+
 
     // Get member meta data
-    std::string description = GetMemberMeta(GetMemberData<Transform2D>("position"), META_DATA_DESCRIPTION);
+    MemberData& member_data = GetMemberData<Transform2D>("position");
+    std::string description = GetMemberMeta(member_data, META_DATA_DESCRIPTION);
     
     // Set member meta data
-    SetMemberMeta(GetClassData<Transform2D>("position"), META_DATA_DESCRIPTION, description);
+    SetMemberMeta(member_data, META_DATA_DESCRIPTION, description);
 ```
 
 -----
