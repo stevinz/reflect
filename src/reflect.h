@@ -79,78 +79,71 @@
 //          t.position = std::vector<double>({1.0, 2.0, 3.0});
 //      ...
 //
-//      TYPE DATA
-//      ---------
-//      - Class Type Data
-//          GetClassData<Transform2D>().member_count;   // By class type
-//          GetClassData(t).member_count;               // By class instance
-//          GetClassData(hash_id).member_count;         // By class hash id
-//          GetClassData("Transform2D").member_count;   // By class name
+//      TYPEDATA OBJECT
+//      ----------------
+//      - Class TypeData
+//          TypeData& data = ClassData<Transform2D>();          // By class type
+//          TypeData& data = ClassData(t);                      // By class instance
+//          TypeData& data = ClassData(hash_id);                // By class hash id
+//          TypeData& data = ClassData("Transform2D");          // By class name
 //
-//      - Member Type Data
-//          GetMemberData<Transform2D>(0).name;         // By class type, member index
-//          GetMemberData<Transform2D>("width").name;   // By class type, member name
-//          GetMemberData(t, 0).name;                   // By class instance, member index
-//          GetMemberData(t, "width").name;             // By class instance, member name 
-//          GetMemberData(hash_id, 0).name;             // By class hash id, member index
-//          GetMemberData(hash_id, "width").name;       // By class hash id, member name 
+//      - Member TypeData
+//          TypeData& data = MemberData<Transform2D>(0);        // By class type, member index
+//          TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
+//          TypeData& data = MemberData(t, 0);                  // By class instance, member index
+//          TypeData& data = MemberData(t, "width");            // By class instance, member name 
+//          TypeData& data = MemberData(hash_id, 0);            // By class hash id, member index
+//          TypeData& data = MemberData(hash_id, "width");      // By class hash id, member name 
 //
 //
 //      GET / SET MEMBER VARIABLE
 //      -------------------------
-//      Before calling GetValue<>(), member variable type can be checked by comparing to
+//      Use the ClassMember<member_type>(class_instance, member_data) function to return
+//      a reference to a member variable. This function requires the return type, a class
+//      instance (can be void* or class type), and a member variable TypeData object.
+//      Before calling ClassMember<>(), member variable type can be checked by comparing to
 //      predefined constants. These can easily be added to under "Member Types" below...
 //
-//      - GetValue by Index
-//          HashID type = GetMemberData(t, 0).hash_code;
-//          if (type == MEMBER_TYPE_INT) {
-//              int width = GetValue<int>(t, 0);
+//      - Member Variable by Index
+//          TypeData& member = MemberData(t, 0);
+//          if (member.hash_code == MEMBER_TYPE_INT) {
+//              // Create reference to member
+//              int& width = ClassMember<int>(&t, member);     
+//              // Can now set member variable directly
+//              width = 120;                                        
 //          }
 //
-//      - GetValue by Name
-//          HashID type = GetMemberData(t, "position").hash_code;
-//          if (type == MEMBER_TYPE_VECTOR_DOUBLE) {
-//              std::vector<double> position = GetValue<std::vector<double>>(t, "position");
-//          }
-//
-//      - SetValue by Index
-//          HashID type = GetMemberData(t, 0).hash_code;
-//          if (type == MEMBER_TYPE_INT) {
-//              int new_width = 50;
-//              SetValue(t, 0, new_width);
-//          }
-//
-//      - SetValue by Name
-//          HashID type = GetMemberData(t, "position").hash_code;
-//          if (type == MEMBER_TYPE_VECTOR_DOUBLE) {
-//              std::vector<double> new_position = { 56.0, 58.5, 60.2 };
-//              SetValue(t, "position", new_position);
+//      - Member Variable by Name
+//          TypeData& member = MemberData(t, "position");
+//          if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+//              // Create reference to member
+//              std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
+//              // Can now set member variable directly
+//              position = { 2.0, 4.0, 6.0 };
 //          }
 //
 //      - Iterating Members / Properties
-//          using vec = std::vector<double>;
-//          int member_count = GetClassData("Transform2D").member_count;
+//          int member_count = ClassData("Transform2D").member_count;
 //          for (int index = 0; index < member_count; ++index) {
-//              MemberData& member = GetMemberData(t, index);
+//              TypeData& member = MemberData(t, index);
 //              std::cout << " Index: " << member.index << ", ";
 //              std::cout << " Name: " << member.name << ",";
 //              std::cout << " Value: ";
-//              HashID member_type = member.hash_code;
-//              if (member_type == MEMBER_TYPE_INT) {
-//                  std::cout << GetValue<int>(t, index);
-//              } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-//                  std::cout << GetValue<std::vector<double>>(t, index)[0];
+//              if (member.hash_code == MEMBER_TYPE_INT) {
+//                  std::cout << ClassMember<int>(&t, member);
+//              } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+//                  std::cout << ClassMember<std::vector<double>>(&t, member)[0];
 //              }
 //          }
 //
 //      - Data from Unknown Class Type
 //          ...
-//          HashID saved_hash = GetClassData(t).hash_code;
+//          HashID saved_hash = ClassData(t).hash_code;
 //          void* class_pointer = (void*)(&t);
 //          ... 
-//          HashID member_type = GetMemberData(saved_hash, 1).hash_code;
-//          if (member_type == MEMBER_TYPE_INT) {
-//              std::cout << GetValue<int>(class_pointer, saved_hash, 1); 
+//          TypeData& member = MemberData(saved_hash, 1);
+//          if (member.hash_code == MEMBER_TYPE_INT) {
+//              std::cout << GetValue<int>(class_pointer, member); 
 //          }
 //
 //
@@ -166,23 +159,22 @@
 //          REFLECT_MEMBER(width)
 //              MEMBER_META_DATA(META_DATA_DESCRIPTION, "Width of this object.")
 //
-//      To get / set meta data at runtime, pass a ClassData or MemberData type data object 
-//      (this can be retrieved many different ways as shown earlier) to the meta data functions.
-//      THIS DATA OBJECT MUST BE PASSED BY REFERENCE!
+//      To get / set meta data at runtime, pass a TypeData object (class or member, this can be
+//      retrieved many different ways as shown earlier) to the meta data functions.
+//      TYPEDATA OBJECT MUST BE PASSED BY REFERENCE!
 //
-//      - Get class meta data
-//          ClassData& class_data = GetClassData<Transform2D>();
-//          std::string description = GetClassMeta(class_data, META_DATA_DESCRIPTION);
-//          std::string icon_file   = GetClassMeta(class_data, "icon");
-//      - Set class meta data
-//          SetClassMeta(class_data, META_DATA_DESCRIPTION, description);
-//          SetClassMeta(class_data, "icon", icon_file);
+//      - Get Reference TypeData
+//          TypeData& type_data = ClassData<Transform2D>();             // From class...
+//          TypeData& type_data = MemberData<Transform2D>("width");     // or from member variable
 //
-//      - Get member meta data
-//          MemberData& member_data = GetMemberData<Transform2D>("position");
-//          std::string description = GetMemberMeta(member_data, META_DATA_DESCRIPTION);
-//      - Set member meta data
-//          SetMemberMeta(member_data, META_DATA_DESCRIPTION, description);
+//      - Get meta data
+//          std::string description = GetClassMeta(type_data, META_DATA_DESCRIPTION);
+//          std::string icon_file   = GetClassMeta(type_data, "icon");
+//
+//      - Set meta data
+//          SetClassMeta(type_data, META_DATA_DESCRIPTION, description);
+//          SetClassMeta(type_data, "icon", icon_file);
+//
 //
 //
 //####################################################################################
@@ -249,33 +241,28 @@ const HashID MEMBER_TYPE_VECTOR_FLOAT =     CreateHashID<std::vector<float>>();
 const HashID MEMBER_TYPE_VECTOR_DOUBLE =    CreateHashID<std::vector<double>>();
 // ...
 // Easy to add more predefined types here...
-// These predifined types allow for easy identification before calling: GetValue<type>() / SetValue()
+// These predifined types allow for easy identification before calling GetMember<type>()
 // ...
 
 //####################################################################################
 //##    Class / Member Type Data
 //############################
-struct ClassData {
+struct TypeData {
     std::string         name            { "unknown" };                              // Actual struct / class name 
     std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying to user
     HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of class
-    int                 member_count    { 0 };                                      // Number of registered member variables of class
     IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
     StringMap           meta_string_map { };                                        // Map to hold user meta data by string key
-};
-
-struct MemberData {
-    std::string         name            { "unknown" };                              // Actual member variable name 
-    std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying to user
+    // For Class Data
+    int                 member_count    { 0 };                                      // Number of registered member variables of class
+    // For Member Data
     int                 index           { -1 };                                     // Index of member variable within class
-    HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of member variable
     int                 offset          { 0 };                                      // char* offset of member variable within parent class / struct
     size_t              size            { 0 };                                      // size of actual type of member variable
-    IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
-    StringMap           meta_string_map { };                                        // Map to hold user meta data by string key
 };
-static ClassData  unknown_class   { };                                              // Empty ClassData to return by reference on GetClassData() fail
-static MemberData unknown_member  { };                                              // Empty MemberData to return by reference on GetMemberData() fail
+
+// Empty TypeData to return by reference on GetTypeData() fail
+static TypeData         unknown_type    { };                                        
 
 //####################################################################################
 //##    DrReflect
@@ -284,16 +271,15 @@ static MemberData unknown_member  { };                                          
 class DrReflect 
 {
 public:
-    using MemberMap = std::map<int, MemberData>;
-    std::unordered_map<HashID, ClassData>           classes         { };            // Holds data about classes / structs
-    std::unordered_map<HashID, MemberMap>           members         { };            // Holds data about member variables (of classes)
+    std::unordered_map<HashID, TypeData>                    classes     { };        // Holds data about classes / structs
+    std::unordered_map<HashID, std::map<int, TypeData>>     members     { };        // Holds data about member variables (of classes)
 
 public:    
-    void AddClass(ClassData class_data) {
+    void AddClass(TypeData class_data) {
         assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
         classes[class_data.hash_code] = class_data;
     }
-    void AddMember(ClassData class_data, MemberData member_data) {
+    void AddMember(TypeData class_data, TypeData member_data) {
         assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
         assert(classes.find(class_data.hash_code) != classes.end() && "Class never registered with AddClass before calling AddMember!");
         members[class_data.hash_code][member_data.offset] = member_data;
@@ -312,20 +298,14 @@ extern Functions                    g_register_list;                            
 //############################
 void            InitializeReflection();                                             // Creates DrReflect instance and registers classes and member variables
 void            CreateTitle(std::string& name);                                     // Create nice display name from class / member variable names
-void            RegisterClass(ClassData class_data);                                // Update class type data
-void            RegisterMember(ClassData class_data, MemberData member_data);       // Update member type data                
+void            RegisterClass(TypeData class_data);                                 // Update class TypeData
+void            RegisterMember(TypeData class_data, TypeData member_data);          // Update member TypeData                
 
-// Class meta data
-void            SetClassMeta(ClassData& class_data, int key, std::string data);
-void            SetClassMeta(ClassData& class_data, std::string key, std::string data);
-std::string     GetClassMeta(ClassData& class_data, int key);
-std::string     GetClassMeta(ClassData& class_data, std::string key);
-
-// Member meta data
-void            SetMemberMeta(MemberData& member_data, int key, std::string data);
-void            SetMemberMeta(MemberData& member_data, std::string key, std::string data);
-std::string     GetMemberMeta(MemberData& member_data, int key);
-std::string     GetMemberMeta(MemberData& member_data, std::string key);
+// Meta data
+void            SetMetaData(TypeData& type_data, int key, std::string data);
+void            SetMetaData(TypeData& type_data, std::string key, std::string data);
+std::string     GetMetaData(TypeData& type_data, int key);
+std::string     GetMetaData(TypeData& type_data, std::string key);
 
 //####################################################################################
 //##    Class / Member Registration
@@ -335,74 +315,75 @@ template <typename T> void InitiateClass() { };
 
 // Call this to register class / struct type with reflection / meta data system
 template <typename ClassType>
-void RegisterClass(ClassData class_data) { 
+void RegisterClass(TypeData class_data) { 
     assert(std::is_standard_layout<ClassType>() && "Class is not standard layout!!");
 	g_reflect->AddClass(class_data); 
 }
 
 // Call this to register member variable with reflection / meta data system
 template <typename MemberType>
-void RegisterMember(ClassData class_data, MemberData member_data) {
+void RegisterMember(TypeData class_data, TypeData member_data) {
 	g_reflect->AddMember(class_data, member_data); 
 } 
 
 //####################################################################################
-//##    Reflection Data Fetching
+//##    Reflection TypeData Fetching
 //############################
 // #################### Class Data Fetching ####################
-// Class type data fetching by class name
+// Class TypeData fetching by class name
 template<typename T>
-ClassData& GetClassData() {
+TypeData& ClassData() {
     HashID class_hash_id = typeid(T).hash_code();
     if (g_reflect->classes.find(class_hash_id) != g_reflect->classes.end()) {
         return g_reflect->classes[class_hash_id];
     } else { 
-        return unknown_class; 
+        return unknown_type; 
     }
 }
-// Class type data fetching from passed in class instance
+// Class TypeData fetching from passed in class instance
 template<typename T>
-ClassData& GetClassData(T& class_instance) {
-    return GetClassData<T>();
+TypeData& ClassData(T& class_instance) {
+    return ClassData<T>();
 }
-// Class type data fetching from passed in class typeid().hash_code()
-ClassData& GetClassData(HashID hash_id);
-// Class type data fetching from passed in class name
-ClassData& GetClassData(std::string class_name);
-ClassData& GetClassData(const char* class_name);
+// Class TypeData fetching from passed in class typeid().hash_code()
+TypeData& ClassData(HashID hash_id);
+// Class TypeData fetching from passed in class name
+TypeData& ClassData(std::string class_name);
+TypeData& ClassData(const char* class_name);
 
 // #################### Member Data Fetching ####################
 // -------------------------    By Index  -------------------------
-// Member type data fetching by member variable index and class typeid().hash_code()
-MemberData& GetMemberData(HashID class_hash_id, int member_index);
-// Member type data fetching by member variable index and class name
+// Member TypeData fetching by member variable index and class typeid().hash_code()
+TypeData& MemberData(HashID class_hash_id, int member_index);
+// Member TypeData fetching by member variable index and class name
 template<typename T>
-MemberData& GetMemberData(int member_index) {
-    return GetMemberData(CreateHashID<T>(), member_index);   
+TypeData& MemberData(int member_index) {
+    return MemberData(CreateHashID<T>(), member_index);   
 }
-// Member type data fetching by member variable index and class instance
+// Member TypeData fetching by member variable index and class instance
 template<typename T>
-MemberData& GetMemberData(T& class_instance, int member_index) {
-    return GetMemberData<T>(member_index);   
+TypeData& MemberData(T& class_instance, int member_index) {
+    return MemberData<T>(member_index);   
 }
 
 // -------------------------    By Name  -------------------------
-// Member type data fetching by member variable Name and class typeid().hash_code()
-MemberData& GetMemberData(HashID class_hash_id, std::string member_name);
-// Member type data fetching by member variable Name and class name
+// Member TypeData fetching by member variable Name and class typeid().hash_code()
+TypeData& MemberData(HashID class_hash_id, std::string member_name);
+// Member TypeData fetching by member variable Name and class name
 template<typename T>
-MemberData& GetMemberData(std::string member_name) {
-    return GetMemberData(CreateHashID<T>(), member_name); 
+TypeData& MemberData(std::string member_name) {
+    return MemberData(CreateHashID<T>(), member_name); 
 }
-// Member type data fetching by member variable name and class instance
+// Member TypeData fetching by member variable name and class instance
 template<typename T>
-MemberData& GetMemberData(T& class_instance, std::string member_name) {
-    return GetMemberData<T>(member_name); 
+TypeData& MemberData(T& class_instance, std::string member_name) {
+    return MemberData<T>(member_name); 
 }
 
-// #################### Member Variable Value Fetching ####################
+// #################### Member Variable Fetching ####################
 // NOTES:
-//  Casting from void*, not fully standardized across compilers?
+//  Internal Casting
+//      /* Casting from void*, not fully standardized across compilers? */
 //      DrVec3 rotation = *(DrVec3*)(class_ptr + member_data.offset);
 //  Memcpy
 //      DrVec3 value;
@@ -410,67 +391,11 @@ MemberData& GetMemberData(T& class_instance, std::string member_name) {
 //  C++ Member Pointer
 //      static constexpr auto offset_rotation = &Transform2D::rotation;
 //      DrVec3 rotation = ((&et)->*off_rot);
-// ##### Internal casting function
 template<typename ReturnType>
-ReturnType InternalGetValue(char* class_ptr, MemberData member_data) {
+ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
     assert(member_data.name != "unknown" && "Could not find member variable!");
     assert(member_data.hash_code == CreateHashID<ReturnType>() && "Did not request correct return type!");
-    return *(reinterpret_cast<ReturnType*>(class_ptr + member_data.offset));
-}
-// Get member variable value from class by index
-template<typename ReturnType, typename ClassType>
-ReturnType GetValue(ClassType& class_instance, int member_index) {
-    MemberData member_data = GetMemberData<ClassType>(member_index);
-    return InternalGetValue<ReturnType>((char*)(&class_instance), GetMemberData<ClassType>(member_index));
-}
-// Get member variable value from class by name
-template<typename ReturnType, typename ClassType>
-ReturnType GetValue(ClassType& class_instance, std::string member_name) {
-    return InternalGetValue<ReturnType>((char*)(&class_instance), GetMemberData<ClassType>(member_name));
-}
-// Get member variable value using class HashID by index
-template<typename ReturnType>
-ReturnType GetValue(void* class_ptr, HashID class_hash_id, int member_index) {
-    return InternalGetValue<ReturnType>((char*)(class_ptr), GetMemberData(class_hash_id, member_index));
-}
-// Get member variable value using class HashID by name
-template<typename ReturnType>
-ReturnType GetValue(void* class_ptr, HashID class_hash_id, std::string member_name) {
-    return InternalGetValue<ReturnType>((char*)(class_ptr), GetMemberData(class_hash_id, member_name));
-}
-
-// #################### Member Variable Value Setting ####################
-// NOTES:
-//  Memcpy
-//     char *p = block;
-//     memcpy(p + offset, &val, sizeof(val));
-// ##### Internal casting function
-template<typename MemberType>
-void InternalSetValue(char* class_ptr, MemberData member_data, MemberType value) {
-    assert(member_data.name != "unknown" && "Could not find member variable!");
-    assert(member_data.hash_code == CreateHashID<MemberType>() && "Did not pass correct value type!");
-    MemberType& existing = *(reinterpret_cast<MemberType*>(class_ptr + member_data.offset));
-    existing = value;
-}
-// Set member variable of class by index
-template<typename MemberType, typename ClassType>
-void SetValue(ClassType& class_instance, int member_index, MemberType value) {
-    InternalSetValue<MemberType>((char*)(&class_instance), GetMemberData<ClassType>(member_index), value);
-}
-// Set member variable of class by name
-template<typename MemberType, typename ClassType>
-void SetValue(ClassType& class_instance, std::string member_name, MemberType value) {
-    InternalSetValue<MemberType>((char*)(&class_instance), GetMemberData<ClassType>(member_name), value);
-}
-// Set member variable value using class HashID by index
-template<typename MemberType>
-void SetValue(void* class_ptr, HashID class_hash_id, int member_index, MemberType value) {
-    InternalSetValue<MemberType>((char*)(class_ptr), GetMemberData(class_hash_id, member_index), value);
-}
-// Set member variable value using class HashID by name
-template<typename MemberType>
-void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, MemberType value) {
-    InternalSetValue<MemberType>((char*)(class_ptr), GetMemberData(class_hash_id, member_name), value);
+    return *(reinterpret_cast<ReturnType*>(((char*)(class_ptr)) + member_data.offset));
 }
 
 //####################################################################################
@@ -485,27 +410,27 @@ void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, Me
 #define REFLECT_CLASS(TYPE) \
     template <> void InitiateClass<TYPE>() { \
         using T = TYPE; \
-        ClassData class_data {}; \
+        TypeData class_data {}; \
 			class_data.name = #TYPE; \
 			class_data.hash_code = typeid(TYPE).hash_code(); \
 			class_data.title = #TYPE; \
             CreateTitle(class_data.title); \
 		RegisterClass<T>(class_data); \
 		int member_index = -1; \
-		std::unordered_map<int, MemberData> mbrs { };
+		std::unordered_map<int, TypeData> mbrs { };
 
 // Meta data functions
 #define CLASS_META_TITLE(STRING) \
         class_data.title = #STRING;	\
         RegisterClass(class_data);
 #define CLASS_META_DATA(KEY,VALUE) \
-        SetClassMeta(class_data, KEY, VALUE); \
+        SetMetaData(class_data, KEY, VALUE); \
         RegisterClass(class_data);
 
 // Member Registration
 #define REFLECT_MEMBER(MEMBER) \
 		member_index++; \
-		mbrs[member_index] = MemberData(); \
+		mbrs[member_index] = TypeData(); \
 		mbrs[member_index].name = #MEMBER; \
         mbrs[member_index].index = member_index; \
 		mbrs[member_index].hash_code = typeid(T::MEMBER).hash_code(); \
@@ -520,7 +445,7 @@ void SetValue(void* class_ptr, HashID class_hash_id, std::string member_name, Me
         mbrs[member_index].title = #STRING;	\
         RegisterMember(class_data, mbrs[member_index]);
 #define MEMBER_META_DATA(KEY,VALUE) \
-        SetMemberMeta(mbrs[member_index], KEY, VALUE); \
+        SetMetaData(mbrs[member_index], KEY, VALUE); \
         RegisterMember(class_data, mbrs[member_index]);
 
 //#define MEMBER_META_DESCRIPTION(STRING) mbrs[member_index].description = 	#STRING; 	RegisterMember(class_data, mbrs[member_index]); 
@@ -583,101 +508,77 @@ void CreateTitle(std::string& name) {
 }
 
 // ########## Class / Member Registration ##########
-// Update class type data
-void RegisterClass(ClassData class_data) { 
+// Update class TypeData
+void RegisterClass(TypeData class_data) { 
 	g_reflect->AddClass(class_data); 
 }
 
-// Update member type data
-void RegisterMember(ClassData class_data, MemberData member_data) {                     
+// Update member TypeData
+void RegisterMember(TypeData class_data, TypeData member_data) {                     
 	g_reflect->AddMember(class_data, member_data); 
 } 
 
 //####################################################################################
-//##    Type Data Fetching
+//##    TypeData Fetching
 //####################################################################################
 // ########## Class Data Fetching ##########
-// Class type data fetching from passed in class typeid().hash_code()
-ClassData& GetClassData(HashID hash_id) {
+// Class TypeData fetching from passed in class typeid().hash_code()
+TypeData& ClassData(HashID hash_id) {
     for (auto& pair : g_reflect->classes) {
         if (pair.first == hash_id) return pair.second;
     }
-    return unknown_class;
+    return unknown_type;
 }
-// Class type data fetching from passed in class name
-ClassData& GetClassData(std::string class_name) {
+// Class TypeData fetching from passed in class name
+TypeData& ClassData(std::string class_name) {
     for (auto& pair : g_reflect->classes) {
         if (pair.second.name == class_name) return pair.second;
     }
-    return unknown_class;
+    return unknown_type;
 }
-// Class type data fetching from passed in class name
-ClassData& GetClassData(const char* class_name) {
-    return GetClassData(std::string(class_name));
+// Class TypeData fetching from passed in class name
+TypeData& ClassData(const char* class_name) {
+    return ClassData(std::string(class_name));
 }
 
 // ########## Member Data Fetching ##########
-// Member type data fetching by member variable index and class typeid().hash_code()
-MemberData& GetMemberData(HashID class_hash_id, int member_index) {
+// Member TypeData fetching by member variable index and class typeid().hash_code()
+TypeData& MemberData(HashID class_hash_id, int member_index) {
     int count = 0;
     for (auto& member : g_reflect->members[class_hash_id]) {
         if (count == member_index) return member.second;
         ++count;
     }
-    return unknown_member;
+    return unknown_type;
 }
-// Member type data fetching by member variable name and class typeid().hash_code()
-MemberData& GetMemberData(HashID class_hash_id, std::string member_name) {
+// Member TypeData fetching by member variable name and class typeid().hash_code()
+TypeData& MemberData(HashID class_hash_id, std::string member_name) {
     for (auto& member : g_reflect->members[class_hash_id]) {
         if (member.second.name == member_name) return member.second;
     }
-    return unknown_member;
+    return unknown_type;
 }
 
 //####################################################################################
-//##    Meta Data User Info
+//##    Meta Data (User Info)
 //####################################################################################
-// Set class meta data
-void SetClassMeta(ClassData& class_data, int key, std::string data) {
-    if (class_data.hash_code != 0) class_data.meta_int_map[key] = data;
+void SetMetaData(TypeData& type_data, int key, std::string data) {
+    if (type_data.hash_code != 0) type_data.meta_int_map[key] = data;
 }
-void SetClassMeta(ClassData& class_data, std::string key, std::string data) {
-    if (class_data.hash_code != 0) class_data.meta_string_map[key] = data;
+void SetMetaData(TypeData& type_data, std::string key, std::string data) {
+    if (type_data.hash_code != 0) type_data.meta_string_map[key] = data;
 }
-// Get class meta data
-std::string GetClassMeta(ClassData& class_data, int key) {
-    if (class_data.hash_code != 0) {
-        if (class_data.meta_int_map.find(key) != class_data.meta_int_map.end())
-            return class_data.meta_int_map[key];
+std::string GetMetaData(TypeData& type_data, int key) {
+    if (type_data.hash_code != 0) {
+        if (type_data.meta_int_map.find(key) != type_data.meta_int_map.end())
+            return type_data.meta_int_map[key];
     }
     return "";
 }
-std::string GetClassMeta(ClassData& class_data, std::string key) {
-    if (class_data.hash_code != 0) {
-        if (class_data.meta_string_map.find(key) != class_data.meta_string_map.end())
-            return class_data.meta_string_map[key];
-    }
-    return "";
-}
-// Set member meta data
-void SetMemberMeta(MemberData& member_data, int key, std::string data) {
-    if (member_data.hash_code != 0) member_data.meta_int_map[key] = data;
-}
-void SetMemberMeta(MemberData& member_data, std::string key, std::string data) {
-    if (member_data.hash_code != 0) member_data.meta_string_map[key] = data;
-}
-// Get member meta data
-std::string GetMemberMeta(MemberData& member_data, int key) {
-    if (member_data.hash_code != 0) {
-        if (member_data.meta_int_map.find(key) != member_data.meta_int_map.end())
-            return member_data.meta_int_map[key];
-    }
-    return "";
-}
-std::string GetMemberMeta(MemberData& member_data, std::string key) {
-    if (member_data.hash_code != 0) {
-        if (member_data.meta_string_map.find(key) != member_data.meta_string_map.end())
-            return member_data.meta_string_map[key];
+std::string GetMetaData(TypeData& type_data, std::string key) {
+    if (type_data.hash_code != 0) {
+        if (type_data.meta_string_map.find(key) != type_data.meta_string_map.end())
+            return type_data.meta_string_map[key];
     }
     return "";
 }

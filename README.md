@@ -66,74 +66,65 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
         t.text = "Hello world!";
 ```
 
-### Type Data Object
+### TypeData Object
 ```cpp
-    // Class Type Data
-    GetClassData<Transform2D>().member_count;   // By class type
-    GetClassData(t).member_count;               // By class instance
-    GetClassData(hash_id).member_count;         // By class hash id
-    GetClassData("Transform2D").member_count;   // By class name
+    // Class TypeData
+    TypeData& data = ClassData<Transform2D>();          // By class type
+    TypeData& data = ClassData(t);                      // By class instance
+    TypeData& data = ClassData(hash_id);                // By class hash id
+    TypeData& data = ClassData("Transform2D");          // By class name
 
-    // Member Type Data
-    GetMemberData<Transform2D>(0).title;        // By class type, member index
-    GetMemberData<Transform2D>("width").title;  // By class type, member name
-    GetMemberData(t, 0).title;                  // By class instance, member index    
-    GetMemberData(t, "width").title;            // By class instance, member name 
-    GetMemberData(hash_id, 0).title;            // By class hash id, member index
-    GetMemberData(hash_id, "width").title;      // By class hash id, member name 
+    // Member TypeData
+    TypeData& data = MemberData<Transform2D>(0);        // By class type, member index
+    TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
+    TypeData& data = MemberData(t, 0);                  // By class instance, member index
+    TypeData& data = MemberData(t, "width");            // By class instance, member name 
+    TypeData& data = MemberData(hash_id, 0);            // By class hash id, member index
+    TypeData& data = MemberData(hash_id, "width");      // By class hash id, member name 
 ```
 
 ### Get / Set Member Variables
-- Before calling GetValue<>(), member variable type can be checked by comparing to predefined constants. These can easily be added to in 'reflect.h'...
+- Use the ClassMember<member_type>(class_instance, member_data) function to return a reference to a member variable. This function requires the return type, a class instance (can be void* or class type), and a member variable TypeData object. Before calling ClassMember<>(), member variable type can be checked by comparing to predefined constants. These can easily be added to in 'reflect.h'...
 ```cpp
-    // GetValue by Index
-    HashID member_type = GetMemberData(t, 0).hash_code;
-    if (member_type == MEMBER_TYPE_INT) {
-        int width = GetValue<int>(t, 0);
+    // Member Variable by Index
+    TypeData& member = MemberData(t, 0);
+    if (member.hash_code == MEMBER_TYPE_INT) {
+        // Create reference to member
+        int& width = ClassMember<int>(&t, member);     
+        // Can now set member variable directly
+        width = 120;                                        
     }
 
-    // GetValue by Name
-    HashID member_type = GetMemberData(t, "position").hash_code;
-    if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-        std::vector<double> position = GetValue<std::vector<double>>(t, "position");
-    }
-
-    // SetValue by Index
-    HashID member_type = GetMemberData(t, 0).hash_code;
-    if (member_type == MEMBER_TYPE_INT) {
-        int new_width = 50;
-        SetValue(t, 0, new_width);
-    }
-
-    // SetValue by Name
-    HashID member_type = GetMemberData(t, "position").hash_code;
-    if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-        std::vector<double> new_position = { 56.0, 58.5, 60.2 };
-        SetValue(t, "position", new_position);
+    // Member Variable by Name
+    TypeData& member = MemberData(t, "position");
+    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+        // Create reference to member
+        std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
+        // Can now set member variable directly
+        position = { 2.0, 4.0, 6.0 };
     }
 ```
 
 -----
 ## Iterating Members / Properties
 ```cpp
-    int member_count = GetClassData("Transform2D").member_count;
+    int member_count = ClassData("Transform2D").member_count;
     for (int index = 0; index < member_count; ++index) {
-        MemberData& member = GetMemberData(t, index);
+        TypeData& member = MemberData(t, index);
         std::cout << " Index: " << member.index << ", ";
-        std::cout << " Name: " << member.name << ",";
+        std::cout << " Name: " << member.name << ", ";
+        std::cout << " Title: " << member.title << ", ";
         std::cout << " Value: ";
-        HashID member_type = GetMemberData(t, index).hash_code;
-        if (member_type == MEMBER_TYPE_STRING) {
-            std::cout << GetValue<std::string>(t, index);
-        } else if (member_type == MEMBER_TYPE_INT) {
-            std::cout << GetValue<int>(t, index);
-        } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-            std::vector<double> vec = GetValue<std::vector<double>>(t, index);
+        if (member.hash_code == MEMBER_TYPE_INT) {
+            std::cout << ClassMember<int>(&t, member);
+        } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+            std::cout << ClassMember<std::vector<double>>(&t, member)[0];
+        else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+            std::vector<double>& vec = ClassMember<std::vector<double>>(&t, member);
             for (auto& number : vec) {
                 std::cout << number << ", ";
             }
         }
-        std::cout << std::endl;
     }
 ```
 
@@ -141,15 +132,15 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ## Data from Unknown Class Type
 - If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized, store the component class '.hash_code':
 ```cpp
-    HashID saved_hash = GetClassData(t).hash_code;
+    HashID saved_hash = ClassData(t).hash_code;
     void* class_pointer = (void*)(&t);
 ```  
 - Later (if your components are stored as void pointers in an array / vector / etc. with other components) you may still access the member variables of the component without casting the component back to the original type. This is done by using the saved_hash from earlier:
 ```cpp
     using vec = std::vector<double>;
-    HashID member_type = GetMemberData(saved_hash, 3).hash_code;
-    if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-        vec rotation = GetValue<vec>(class_pointer, saved_hash, 3);
+    TypeData& member = MemberData(saved_hash, 3);
+    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+        vec& rotation = ClassMember<vec>(class_pointer, member);
         std::cout << "  Rotation X: " << rotation[0];
         std::cout << ", Rotation Y: " << rotation[1];
         std::cout << ", Rotation Z: " << rotation[2];
@@ -177,24 +168,20 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ```
 
 ### Get / Set Meta Data
-- By reference, pass a ClassData or MemberData type data object (this can be retrieved many different ways as shown earlier) to the meta data functions to get / set meta data at runtime:
+- BY REFERENCE, pass a TypeData object (class or member, this can be retrieved many different ways as shown earlier) to the meta data functions to get / set meta data at runtime:
 ```cpp
-    // Get class meta data
-    ClassData& class_data = GetClassData<Transform2D>();
-    std::string description = GetClassMeta(class_data, META_DATA_DESCRIPTION);
-    std::string icon_file   = GetClassMeta(class_data, "icon");
+    // TypeData from class
+    TypeData& type_data = ClassData<Transform2D>();
+    // or from member variable
+    TypeData& type_data = MemberData<Transform2D>("width");
 
-    // Set class meta data
-    SetClassMeta(class_data, META_DATA_DESCRIPTION, description);
-    SetClassMeta(class_data, "icon", icon_file);
+    // Get meta data
+    std::string description = GetMetaData(type_data, META_DATA_DESCRIPTION);
+    std::string icon_file   = GetMetaData(type_data, "icon");
 
-
-    // Get member meta data
-    MemberData& member_data = GetMemberData<Transform2D>("position");
-    std::string description = GetMemberMeta(member_data, META_DATA_DESCRIPTION);
-    
-    // Set member meta data
-    SetMemberMeta(member_data, META_DATA_DESCRIPTION, description);
+    // Set meta data
+    SetMetaData(type_data, META_DATA_DESCRIPTION, description);
+    SetMetaData(type_data, "icon", icon_file);
 ```
 
 -----
