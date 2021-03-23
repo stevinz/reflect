@@ -48,6 +48,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
         REFLECT_MEMBER(width)
         REFLECT_MEMBER(height)
         REFLECT_MEMBER(position)
+        REFLECT_MEMBER(text)
         REFLECT_END(Transform2D)
     #endif
 
@@ -115,19 +116,19 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 -----
 ## Iterating Members / Properties
 ```cpp
-    using vec = std::vector<double>;
     int member_count = GetClassData("Transform2D").member_count;
-    for (int prop = 0; prop < member_count; ++prop) {
-        std::cout << " Member Index: " << prop << ", ";
-        std::cout << " Name: " << GetMemberData(t, prop).name << ",";
+    for (int index = 0; index < member_count; ++index) {
+        MemberData& member = GetMemberData(t, index);
+        std::cout << " Index: " << member.index << ", ";
+        std::cout << " Name: " << member.name << ",";
         std::cout << " Value: ";
-        HashID member_type = GetMemberData(t, prop).hash_code;
+        HashID member_type = GetMemberData(t, index).hash_code;
         if (member_type == MEMBER_TYPE_INT) {
-            std::cout << GetValue<int>(t, prop);
+            std::cout << GetValue<int>(t, index);
         } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-            std::cout << GetValue<vec>(t, prop)[0];
+            std::cout << GetValue<std::vector<double>>(t, index)[0];
         } else if (member_type == MEMBER_TYPE_STRING) {
-            std::cout << GetValue<std::string>(t, prop);
+            std::cout << GetValue<std::string>(t, index);
         }
         std::cout << std::endl;
     }

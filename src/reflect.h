@@ -127,6 +127,64 @@
 //              SetValue(t, "position", new_position);
 //          }
 //
+//      - Iterating Members / Properties
+//          using vec = std::vector<double>;
+//          int member_count = GetClassData("Transform2D").member_count;
+//          for (int index = 0; index < member_count; ++index) {
+//              MemberData& member = GetMemberData(t, index);
+//              std::cout << " Index: " << member.index << ", ";
+//              std::cout << " Name: " << member.name << ",";
+//              std::cout << " Value: ";
+//              HashID member_type = member.hash_code;
+//              if (member_type == MEMBER_TYPE_INT) {
+//                  std::cout << GetValue<int>(t, index);
+//              } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
+//                  std::cout << GetValue<std::vector<double>>(t, index)[0];
+//              }
+//          }
+//
+//      - Data from Unknown Class Type
+//          ...
+//          HashID saved_hash = GetClassData(t).hash_code;
+//          void* class_pointer = (void*)(&t);
+//          ... 
+//          HashID member_type = GetMemberData(saved_hash, 1).hash_code;
+//          if (member_type == MEMBER_TYPE_INT) {
+//              std::cout << GetValue<int>(class_pointer, saved_hash, 1); 
+//          }
+//
+//
+//      USER META DATA
+//      --------------
+//      Meta data can by stored as std::string within a class or member type. Set user meta data
+//      at compile time using CLASS_META_DATA and MEMBER_META_DATA in the class header file during
+//      registration with (int, string) or (sting, string) pairs:
+//
+//          REFLECT_CLASS(Transform2D)
+//              CLASS_META_DATA(META_DATA_DESCRIPTION, "Describes object in 2D space.")
+//              CLASS_META_DATA("icon", "assets/transform.png")
+//          REFLECT_MEMBER(width)
+//              MEMBER_META_DATA(META_DATA_DESCRIPTION, "Width of this object.")
+//
+//      To get / set meta data at runtime, pass a ClassData or MemberData type data object 
+//      (this can be retrieved many different ways as shown earlier) to the meta data functions.
+//      THIS DATA OBJECT MUST BE PASSED BY REFERENCE!
+//
+//      - Get class meta data
+//          ClassData& class_data = GetClassData<Transform2D>();
+//          std::string description = GetClassMeta(class_data, META_DATA_DESCRIPTION);
+//          std::string icon_file   = GetClassMeta(class_data, "icon");
+//      - Set class meta data
+//          SetClassMeta(class_data, META_DATA_DESCRIPTION, description);
+//          SetClassMeta(class_data, "icon", icon_file);
+//
+//      - Get member meta data
+//          MemberData& member_data = GetMemberData<Transform2D>("position");
+//          std::string description = GetMemberMeta(member_data, META_DATA_DESCRIPTION);
+//      - Set member meta data
+//          SetMemberMeta(member_data, META_DATA_DESCRIPTION, description);
+//
+//
 //####################################################################################
 //
 //      Visit (https://github.com/stevinz/reflect) for more detailed instructions
