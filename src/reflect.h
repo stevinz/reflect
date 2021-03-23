@@ -481,7 +481,8 @@ void InitializeReflection() {
     // Register Structs / Classes
     for (int func = 0; func < g_register_list.size(); ++func) {
         g_register_list[func]();       
-    }   
+    }
+    g_register_list.clear();        // Clean up
 }
 
 // Used in registration macros to automatically create nice display name from class / member variable names
