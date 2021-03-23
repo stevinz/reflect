@@ -123,12 +123,15 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
         std::cout << " Name: " << member.name << ",";
         std::cout << " Value: ";
         HashID member_type = GetMemberData(t, index).hash_code;
-        if (member_type == MEMBER_TYPE_INT) {
+        if (member_type == MEMBER_TYPE_STRING) {
+            std::cout << GetValue<std::string>(t, index);
+        } else if (member_type == MEMBER_TYPE_INT) {
             std::cout << GetValue<int>(t, index);
         } else if (member_type == MEMBER_TYPE_VECTOR_DOUBLE) {
-            std::cout << GetValue<std::vector<double>>(t, index)[0];
-        } else if (member_type == MEMBER_TYPE_STRING) {
-            std::cout << GetValue<std::string>(t, index);
+            std::vector<double> vec = GetValue<std::vector<double>>(t, index);
+            for (auto& number : vec) {
+                std::cout << number << ", ";
+            }
         }
         std::cout << std::endl;
     }
