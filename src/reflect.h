@@ -472,7 +472,7 @@ void CreateTitle(std::string& name) {
     for (int c = 1; c < name.length(); c++) {
         if (islower(name[c - 1]) && isupper(name[c])) {
             title += std::string(" ");
-        } else if ((isalpha(name[c - 1]) && isnumber(name[c]))) {
+        } else if ((isalpha(name[c - 1]) && isdigit(name[c]))) {
             title += std::string(" ");
         }
         title += name[c];
