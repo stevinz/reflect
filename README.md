@@ -108,7 +108,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 -----
 ## Iterating Members / Properties
 ```cpp
-    int member_count = ClassData("Transform2D").member_count;
+    int member_count = ClassData(t).member_count;
     for (int index = 0; index < member_count; ++index) {
         TypeData& member = MemberData(t, index);
         std::cout << " Index: " << member.index << ", ";
@@ -119,7 +119,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
             std::cout << ClassMember<int>(&t, member);
         } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
             std::cout << ClassMember<std::vector<double>>(&t, member)[0];
-        else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+        } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
             std::vector<double>& vec = ClassMember<std::vector<double>>(&t, member);
             for (auto& number : vec) {
                 std::cout << number << ", ";
