@@ -71,7 +71,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     // Class TypeData
     TypeData& data = ClassData<Transform2D>();          // By class type
     TypeData& data = ClassData(t);                      // By class instance
-    TypeData& data = ClassData(hash_id);                // By class hash id
+    TypeData& data = ClassData(type_hash);              // By class type hash
     TypeData& data = ClassData("Transform2D");          // By class name
 
     // Member TypeData
@@ -79,16 +79,16 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
     TypeData& data = MemberData(t, 0);                  // By class instance, member index
     TypeData& data = MemberData(t, "width");            // By class instance, member name 
-    TypeData& data = MemberData(hash_id, 0);            // By class hash id, member index
-    TypeData& data = MemberData(hash_id, "width");      // By class hash id, member name 
+    TypeData& data = MemberData(type_hash, 0);          // By class type hash, member index
+    TypeData& data = MemberData(type_hash, "width");    // By class type hash, member name 
 ```
 
 ### Get / Set Member Variables
-- Use the ClassMember<member_type>(class_instance, member_data) function to return a reference to a member variable. This function requires the return type, a class instance (can be void* or class type), and a member variable TypeData object. Before calling ClassMember<>(), member variable type can be checked by comparing to predefined constants. These can easily be added to in 'reflect.h'...
+- Use the ClassMember<member_type>(class_instance, member_data) function to return a reference to a member variable. This function requires the return type, a class instance (can be void* or class type), and a member variable TypeData object. Before calling ClassMember<>(), member variable type can be checked by comparing to types using helper function TypeHashID<type_to_check>()
 ```cpp
     // Member Variable by Index
     TypeData& member = MemberData(t, 0);
-    if (member.hash_code == MEMBER_TYPE_INT) {
+    if (member.type_hash == TypeHashID<int>()) {
         // Create reference to member
         int& width = ClassMember<int>(&t, member);     
         // Can now set member variable directly
@@ -97,7 +97,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 
     // Member Variable by Name
     TypeData& member = MemberData(t, "position");
-    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+    if (member.type_hash == TypeHashID<std::vector<double>>()) {
         // Create reference to member
         std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
         // Can now set member variable directly
@@ -112,14 +112,14 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     for (int index = 0; index < member_count; ++index) {
         TypeData& member = MemberData(t, index);
         std::cout << " Index: " << member.index << ", ";
-        std::cout << " Name: " << member.name << ", ";
+        std::cout << " Name: "  << member.name  << ", ";
         std::cout << " Title: " << member.title << ", ";
         std::cout << " Value: ";
-        if (member.hash_code == MEMBER_TYPE_INT) {
+        if (member.type_hash == TypeHashID<int>()) {
             std::cout << ClassMember<int>(&t, member);
-        } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
-            std::cout << ClassMember<std::vector<double>>(&t, member)[0];
-        } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+        } else if (member.type_hash == TypeHashID<std::string>()) {
+            std::cout << ClassMember<std::string>(&t, member);
+        } else if (member.type_hash == TypeHashID<std::vector<double>>()) {
             std::vector<double>& vec = ClassMember<std::vector<double>>(&t, member);
             for (auto& number : vec) {
                 std::cout << number << ", ";
@@ -130,16 +130,16 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 
 -----
 ## Data from Unknown Class Type
-- If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized, store the component class '.hash_code':
+- If using with an entity component system, it's possible you may not have access to class type at runtime. Often a collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized, store the component class TypeHash:
 ```cpp
-    HashID saved_hash = ClassData(t).hash_code;
+    TypeHash saved_hash = ClassData(t).type_hash;
     void* class_pointer = (void*)(&t);
 ```  
 - Later (if your components are stored as void pointers in an array / vector / etc. with other components) you may still access the member variables of the component without casting the component back to the original type. This is done by using the saved_hash from earlier:
 ```cpp
     using vec = std::vector<double>;
     TypeData& member = MemberData(saved_hash, 3);
-    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+    if (member.type_hash == TypeHashID<vec>()) {
         vec& rotation = ClassMember<vec>(class_pointer, member);
         std::cout << "  Rotation X: " << rotation[0];
         std::cout << ", Rotation Y: " << rotation[1];

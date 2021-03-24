@@ -45,24 +45,24 @@ int main(int argc, char* argv[]) {
         t.text =        "hello world!";
 
 
-    // ########## Store HashID for later
-    HashID t_hash_id = CreateHashID<Transform2D>();
+    // ########## Store TypeHash for later
+    TypeHash t_type_hash = TypeHashID<Transform2D>();
 
 
-    // ########## EXAMPLE: Get class TypeData by class type / instance / hash id / name
-    std::cout << "Class Data by Type     - Name:    " << ClassData<Transform2D>().name      << std::endl;
-    std::cout << "Class Data by Instance - Members: " << ClassData(t).member_count          << std::endl;
-    std::cout << "Class Data by HashID   - Title:   " << ClassData(t_hash_id).title         << std::endl;
-    std::cout << "Class Data by Name     - HashID:  " << ClassData("Transform2D").hash_code << std::endl;
+    // ########## EXAMPLE: Get class TypeData by class type / instance / type hash / name
+    std::cout << "Class Data by Type     - Name:     "  << ClassData<Transform2D>().name      << std::endl;
+    std::cout << "Class Data by Instance - Members:  "  << ClassData(t).member_count          << std::endl;
+    std::cout << "Class Data by TypeHash - Title:    "  << ClassData(t_type_hash).title       << std::endl;
+    std::cout << "Class Data by Name     - TypeHash: "  << ClassData("Transform2D").type_hash << std::endl;
 
 
     // ########## EXAMPLE: Get member TypeData by member variable index / name
-    std::cout << "By Class Type, Member Index:      " << MemberData<Transform2D>(t, 2).name          << std::endl;
-    std::cout << "By Class Type, Member Name:       " << MemberData<Transform2D>("position").index   << std::endl;
-    std::cout << "By Class Instance, Member Index:  " << MemberData(t, 2).name                       << std::endl;
-    std::cout << "By Class Instance, Member Name:   " << MemberData(t, "position").index             << std::endl;
-    std::cout << "By Class HashID, Member Index:    " << MemberData(t_hash_id, 2).name               << std::endl;
-    std::cout << "By Class HashID, Member Name:     " << MemberData(t_hash_id, "position").index     << std::endl;
+    std::cout << "By Class Type, Member Index:       "  << MemberData<Transform2D>(t, 2).name          << std::endl;
+    std::cout << "By Class Type, Member Name:        "  << MemberData<Transform2D>("position").index   << std::endl;
+    std::cout << "By Class Instance, Member Index:   "  << MemberData(t, 2).name                       << std::endl;
+    std::cout << "By Class Instance, Member Name:    "  << MemberData(t, "position").index             << std::endl;
+    std::cout << "By Class TypeHash, Member Index:   "  << MemberData(t_type_hash, 2).name             << std::endl;
+    std::cout << "By Class TypeHash, Member Name:    "  << MemberData(t_type_hash, "position").index   << std::endl;
     
 
     // ########## EXAMPLE: Meta Data
@@ -81,25 +81,25 @@ int main(int argc, char* argv[]) {
 
     // EXAMPLE: Return member variable by class instance, member variable index
     TypeData& member = MemberData(t, 0);
-    if (member.hash_code == MEMBER_TYPE_INT) {
+    if (member.type_hash == TypeHashID<int>()) {
         int& width = ClassMember<int>(&t, member);
         std::cout << "  " << member.title << ": " << width << std::endl;
     }
 
     // EXAMPLE: Return member variable by class instance, member variable name
     member = MemberData(t, "position");
-    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+    if (member.type_hash == TypeHashID<std::vector<double>>()) {
         std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
         std::cout << "  " << MemberData(t, "position").title << " X: " << position[0] << std::endl;
         std::cout << "  " << MemberData(t, "position").title << " Y: " << position[1] << std::endl;
         std::cout << "  " << MemberData(t, "position").title << " Z: " << position[2] << std::endl;
     }
 
-    // EXAMPLE: Return member variable by void* class, class hash id, and member variable name
-    member = MemberData(t_hash_id, "text");
-    if (member.hash_code == MEMBER_TYPE_STRING) {
+    // EXAMPLE: Return member variable by void* class, class type hash, and member variable name
+    member = MemberData(t_type_hash, "text");
+    if (member.type_hash == TypeHashID<std::string>()) {
         std::string& txt = ClassMember<std::string>(&t, member);
-        std::cout << "  " << MemberData(t_hash_id, "text").title << ": " << txt << std::endl;
+        std::cout << "  " << MemberData(t_type_hash, "text").title << ": " << txt << std::endl;
     }
 
 
@@ -108,14 +108,14 @@ int main(int argc, char* argv[]) {
     for (int p = 0; p < ClassData("Transform2D").member_count; ++p) {
         std::cout << "  Member Index: " << p << ", Name: " << MemberData(t, p).name << ", Value(s): ";
         member = MemberData(t, p);
-        if (member.hash_code == MEMBER_TYPE_INT) {
+        if (member.type_hash == TypeHashID<int>()) {
             std::cout << ClassMember<int>(&t, member);                    
         } else 
-        if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+        if (member.type_hash == TypeHashID<std::vector<double>>()) {
             std::vector<double> v = ClassMember<std::vector<double>>(&t, member);
             for (size_t c = 0; c < v.size(); c++) std::cout << v[c] << ", ";
         } else 
-        if (member.hash_code == MEMBER_TYPE_STRING) {
+        if (member.type_hash == TypeHashID<std::string>()) {
             std::cout << ClassMember<std::string>(&t, member);
         }
         std::cout << std::endl;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 
     // ########## EXAMPLE: SetValue by Name (can also be called by class type / member variable index, etc...)
     member = MemberData(t, "position");
-    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+    if (member.type_hash == TypeHashID<std::vector<double>>()) {
         ClassMember<std::vector<double>>(&t, member) = { 56.0, 58.5, 60.2 };
         std::cout << "After calling SetValue on 'position':" << std::endl;
         std::cout << "  " << MemberData(t, "position").title << " X: " << ClassMember<std::vector<double>>(&t, member)[0] << std::endl;
@@ -137,17 +137,17 @@ int main(int argc, char* argv[]) {
     //  
     //  If using with an entity component system, it's possible you may not have access to class type at runtime. Often a
     //  collection of components are stored in a container of void pointers. Somewhere in your code when your class is initialized,
-    //  store the component class '.hash_code':                              
+    //  store the component class TypeHash:                              
     //
-            HashID saved_hash = ClassData(t).hash_code;
-            void*  component_ptr = (void*)(&t);
+            TypeHash saved_hash = ClassData(t).type_hash;
+            void* component_ptr = (void*)(&t);
     //  
     //  Later (if your components are stored as void pointers in an array / vector / etc. with other components) you may still
     //  access the member variables of the component back to the original type. This is done by using the saved_hash from earlier:                                                     
     //
     std::cout << "Getting member variable value from unknown class type:" << std::endl;
     member = MemberData(saved_hash, 3);
-    if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+    if (member.type_hash == TypeHashID<std::vector<double>>()) {
         std::vector<double>& rotation = ClassMember<std::vector<double>>(component_ptr, member);
         std::cout << "  Rotation X: " << rotation[0] << ", Rotation Y: " << rotation[1] << ", Rotation Z: " << rotation[2] << std::endl;
     }

@@ -84,7 +84,7 @@
 //      - Class TypeData
 //          TypeData& data = ClassData<Transform2D>();          // By class type
 //          TypeData& data = ClassData(t);                      // By class instance
-//          TypeData& data = ClassData(hash_id);                // By class hash id
+//          TypeData& data = ClassData(type_hash);              // By class type hash
 //          TypeData& data = ClassData("Transform2D");          // By class name
 //
 //      - Member TypeData
@@ -92,8 +92,8 @@
 //          TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
 //          TypeData& data = MemberData(t, 0);                  // By class instance, member index
 //          TypeData& data = MemberData(t, "width");            // By class instance, member name 
-//          TypeData& data = MemberData(hash_id, 0);            // By class hash id, member index
-//          TypeData& data = MemberData(hash_id, "width");      // By class hash id, member name 
+//          TypeData& data = MemberData(type_hash, 0);          // By class type hash, member index
+//          TypeData& data = MemberData(type_hash, "width");    // By class type hash, member name 
 //
 //
 //      GET / SET MEMBER VARIABLE
@@ -102,11 +102,11 @@
 //      a reference to a member variable. This function requires the return type, a class
 //      instance (can be void* or class type), and a member variable TypeData object.
 //      Before calling ClassMember<>(), member variable type can be checked by comparing to
-//      predefined constants. These can easily be added to under "Member Types" below...
+//      types using helper function TypeHashID<type_to_check>().
 //
 //      - Member Variable by Index
 //          TypeData& member = MemberData(t, 0);
-//          if (member.hash_code == MEMBER_TYPE_INT) {
+//          if (member.type_hash == TypeHashID<int>()) {
 //              // Create reference to member
 //              int& width = ClassMember<int>(&t, member);     
 //              // Can now set member variable directly
@@ -115,7 +115,7 @@
 //
 //      - Member Variable by Name
 //          TypeData& member = MemberData(t, "position");
-//          if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+//          if (member.type_hash == TypeHashID<std::vector<double>>()) {
 //              // Create reference to member
 //              std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
 //              // Can now set member variable directly
@@ -129,20 +129,20 @@
 //              std::cout << " Index: " << member.index << ", ";
 //              std::cout << " Name: " << member.name << ",";
 //              std::cout << " Value: ";
-//              if (member.hash_code == MEMBER_TYPE_INT) {
+//              if (member.type_hash == TypeHashID<int>()) {
 //                  std::cout << ClassMember<int>(&t, member);
-//              } else if (member.hash_code == MEMBER_TYPE_VECTOR_DOUBLE) {
+//              } else if (member.type_hash == TypeHashID<std::vector<double>>()) {
 //                  std::cout << ClassMember<std::vector<double>>(&t, member)[0];
 //              }
 //          }
 //
 //      - Data from Unknown Class Type
 //          ...
-//          HashID saved_hash = ClassData(t).hash_code;
+//          TypeHash saved_hash = ClassData(t).type_hash;
 //          void* class_pointer = (void*)(&t);
 //          ... 
 //          TypeData& member = MemberData(saved_hash, 1);
-//          if (member.hash_code == MEMBER_TYPE_INT) {
+//          if (member.type_hash == TypeHashID<int>) {
 //              std::cout << GetValue<int>(class_pointer, member); 
 //          }
 //
@@ -160,8 +160,8 @@
 //              MEMBER_META_DATA(META_DATA_DESCRIPTION, "Width of this object.")
 //
 //      To get / set meta data at runtime, pass a TypeData object (class or member, this can be
-//      retrieved many different ways as shown earlier) to the meta data functions.
-//      TYPEDATA OBJECT MUST BE PASSED BY REFERENCE!
+//      retrieved many different ways as shown earlier) to the meta data functions. TypeData object
+//      MUST BE PASSED BY REFERENCE!
 //
 //      - Get Reference TypeData
 //          TypeData& type_data = ClassData<Transform2D>();             // From class...
@@ -209,56 +209,26 @@ enum Meta_Data {
 //####################################################################################
 //##    Type Definitions
 //############################
-using HashID =          size_t;                                                     // This comes from typeid(OBJECT).hash_code()
+using TypeHash =        size_t;                                                     // This comes from typeid().hash_code()
 using Functions =       std::vector<std::function<void()>>;                         // List of functions
 using IntMap =          std::unordered_map<int, std::string>;                       // Meta data int key map
 using StringMap =       std::map<std::string, std::string>;                         // Meta data string key map
 
 //####################################################################################
-//##    HashID Helper
-//############################
-template <typename T> HashID                CreateHashID() { return typeid(T).hash_code(); }
-
-//####################################################################################
-//##    Member Types
-//############################
-const HashID MEMBER_TYPE_UNKNOWN =          0;
-const HashID MEMBER_TYPE_BOOL =             CreateHashID<bool>();
-const HashID MEMBER_TYPE_CHAR =             CreateHashID<char>();
-const HashID MEMBER_TYPE_STRING =           CreateHashID<std::string>();
-const HashID MEMBER_TYPE_INT =              CreateHashID<int>();
-const HashID MEMBER_TYPE_UINT =             CreateHashID<unsigned int>();
-const HashID MEMBER_TYPE_LONG =             CreateHashID<long>();
-const HashID MEMBER_TYPE_FLOAT =            CreateHashID<float>();
-const HashID MEMBER_TYPE_DOUBLE =           CreateHashID<double>();
-const HashID MEMBER_TYPE_VECTOR_BOOL =      CreateHashID<std::vector<bool>>();
-const HashID MEMBER_TYPE_VECTOR_CHAR =      CreateHashID<std::vector<char>>();
-const HashID MEMBER_TYPE_VECTOR_STRING =    CreateHashID<std::vector<std::string>>();
-const HashID MEMBER_TYPE_VECTOR_INT =       CreateHashID<std::vector<int>>();
-const HashID MEMBER_TYPE_VECTOR_UINT =      CreateHashID<std::vector<unsigned int>>();
-const HashID MEMBER_TYPE_VECTOR_LONG =      CreateHashID<std::vector<long>>();
-const HashID MEMBER_TYPE_VECTOR_FLOAT =     CreateHashID<std::vector<float>>();
-const HashID MEMBER_TYPE_VECTOR_DOUBLE =    CreateHashID<std::vector<double>>();
-// ...
-// Easy to add more predefined types here...
-// These predifined types allow for easy identification before calling GetMember<type>()
-// ...
-
-//####################################################################################
 //##    Class / Member Type Data
 //############################
 struct TypeData {
-    std::string         name            { "unknown" };                              // Actual struct / class name 
-    std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying to user
-    HashID              hash_code       { 0 };                                      // typeid().hash_code of actual underlying type of class
+    std::string         name            { "unknown" };                              // Actual struct / class / member variable name 
+    std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying in gui
+    TypeHash            type_hash       { 0 };                                      // Underlying typeid().hash_code of actual type
     IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
     StringMap           meta_string_map { };                                        // Map to hold user meta data by string key
     // For Class Data
     int                 member_count    { 0 };                                      // Number of registered member variables of class
     // For Member Data
-    int                 index           { -1 };                                     // Index of member variable within class
-    int                 offset          { 0 };                                      // char* offset of member variable within parent class / struct
-    size_t              size            { 0 };                                      // size of actual type of member variable
+    int                 index           { -1 };                                     // Index of member variable within parent class / struct
+    int                 offset          { 0 };                                      // Char* offset of member variable within parent class / struct
+    size_t              size            { 0 };                                      // Size of actual type of member variable
 };
 
 // Empty TypeData to return by reference on GetTypeData() fail
@@ -271,19 +241,19 @@ static TypeData         unknown_type    { };
 class DrReflect 
 {
 public:
-    std::unordered_map<HashID, TypeData>                    classes     { };        // Holds data about classes / structs
-    std::unordered_map<HashID, std::map<int, TypeData>>     members     { };        // Holds data about member variables (of classes)
+    std::unordered_map<TypeHash, TypeData>                  classes     { };        // Holds data about classes / structs
+    std::unordered_map<TypeHash, std::map<int, TypeData>>   members     { };        // Holds data about member variables (of classes)
 
 public:    
     void AddClass(TypeData class_data) {
-        assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
-        classes[class_data.hash_code] = class_data;
+        assert(class_data.type_hash != 0 && "Class type hash is 0, error in registration?");
+        classes[class_data.type_hash] = class_data;
     }
     void AddMember(TypeData class_data, TypeData member_data) {
-        assert(class_data.hash_code != 0 && "Class hash code is 0, error in registration?");
-        assert(classes.find(class_data.hash_code) != classes.end() && "Class never registered with AddClass before calling AddMember!");
-        members[class_data.hash_code][member_data.offset] = member_data;
-        classes[class_data.hash_code].member_count = members[class_data.hash_code].size();
+        assert(class_data.type_hash != 0 && "Class type hash is 0, error in registration?");
+        assert(classes.find(class_data.type_hash) != classes.end() && "Class never registered with AddClass before calling AddMember!");
+        members[class_data.type_hash][member_data.offset] = member_data;
+        classes[class_data.type_hash].member_count = members[class_data.type_hash].size();
     }
 };
 
@@ -300,6 +270,10 @@ void            InitializeReflection();                                         
 void            CreateTitle(std::string& name);                                     // Create nice display name from class / member variable names
 void            RegisterClass(TypeData class_data);                                 // Update class TypeData
 void            RegisterMember(TypeData class_data, TypeData member_data);          // Update member TypeData                
+
+// TypeHash helper function
+template <typename T> 
+TypeHash        TypeHashID() { return typeid(T).hash_code(); }
 
 // Meta data
 void            SetMetaData(TypeData& type_data, int key, std::string data);
@@ -330,12 +304,12 @@ void RegisterMember(TypeData class_data, TypeData member_data) {
 //##    Reflection TypeData Fetching
 //############################
 // #################### Class Data Fetching ####################
-// Class TypeData fetching by class name
+// Class TypeData fetching by actual class type
 template<typename T>
 TypeData& ClassData() {
-    HashID class_hash_id = typeid(T).hash_code();
-    if (g_reflect->classes.find(class_hash_id) != g_reflect->classes.end()) {
-        return g_reflect->classes[class_hash_id];
+    TypeHash class_hash = typeid(T).hash_code();
+    if (g_reflect->classes.find(class_hash) != g_reflect->classes.end()) {
+        return g_reflect->classes[class_hash];
     } else { 
         return unknown_type; 
     }
@@ -345,20 +319,20 @@ template<typename T>
 TypeData& ClassData(T& class_instance) {
     return ClassData<T>();
 }
-// Class TypeData fetching from passed in class typeid().hash_code()
-TypeData& ClassData(HashID hash_id);
+// Class TypeData fetching from passed in class TypeHash
+TypeData& ClassData(TypeHash class_hash);
 // Class TypeData fetching from passed in class name
 TypeData& ClassData(std::string class_name);
 TypeData& ClassData(const char* class_name);
 
 // #################### Member Data Fetching ####################
 // -------------------------    By Index  -------------------------
-// Member TypeData fetching by member variable index and class typeid().hash_code()
-TypeData& MemberData(HashID class_hash_id, int member_index);
+// Member TypeData fetching by member variable index and class TypeHash
+TypeData& MemberData(TypeHash class_hash, int member_index);
 // Member TypeData fetching by member variable index and class name
 template<typename T>
 TypeData& MemberData(int member_index) {
-    return MemberData(CreateHashID<T>(), member_index);   
+    return MemberData(TypeHashID<T>(), member_index);   
 }
 // Member TypeData fetching by member variable index and class instance
 template<typename T>
@@ -367,12 +341,12 @@ TypeData& MemberData(T& class_instance, int member_index) {
 }
 
 // -------------------------    By Name  -------------------------
-// Member TypeData fetching by member variable Name and class typeid().hash_code()
-TypeData& MemberData(HashID class_hash_id, std::string member_name);
+// Member TypeData fetching by member variable Name and class TypeHash
+TypeData& MemberData(TypeHash class_hash, std::string member_name);
 // Member TypeData fetching by member variable Name and class name
 template<typename T>
 TypeData& MemberData(std::string member_name) {
-    return MemberData(CreateHashID<T>(), member_name); 
+    return MemberData(TypeHashID<T>(), member_name); 
 }
 // Member TypeData fetching by member variable name and class instance
 template<typename T>
@@ -394,7 +368,7 @@ TypeData& MemberData(T& class_instance, std::string member_name) {
 template<typename ReturnType>
 ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
     assert(member_data.name != "unknown" && "Could not find member variable!");
-    assert(member_data.hash_code == CreateHashID<ReturnType>() && "Did not request correct return type!");
+    assert(member_data.type_hash == TypeHashID<ReturnType>() && "Did not request correct return type!");
     return *(reinterpret_cast<ReturnType*>(((char*)(class_ptr)) + member_data.offset));
 }
 
@@ -412,7 +386,7 @@ ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
         using T = TYPE; \
         TypeData class_data {}; \
 			class_data.name = #TYPE; \
-			class_data.hash_code = typeid(TYPE).hash_code(); \
+			class_data.type_hash = typeid(TYPE).hash_code(); \
 			class_data.title = #TYPE; \
             CreateTitle(class_data.title); \
 		RegisterClass<T>(class_data); \
@@ -433,7 +407,7 @@ ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
 		mbrs[member_index] = TypeData(); \
 		mbrs[member_index].name = #MEMBER; \
         mbrs[member_index].index = member_index; \
-		mbrs[member_index].hash_code = typeid(T::MEMBER).hash_code(); \
+		mbrs[member_index].type_hash = typeid(T::MEMBER).hash_code(); \
 		mbrs[member_index].offset = offsetof(T, MEMBER); \
 		mbrs[member_index].size = sizeof(T::MEMBER); \
 		mbrs[member_index].title = #MEMBER; \
@@ -447,8 +421,6 @@ ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
 #define MEMBER_META_DATA(KEY,VALUE) \
         SetMetaData(mbrs[member_index], KEY, VALUE); \
         RegisterMember(class_data, mbrs[member_index]);
-
-//#define MEMBER_META_DESCRIPTION(STRING) mbrs[member_index].description = 	#STRING; 	RegisterMember(class_data, mbrs[member_index]); 
 
 // Static definitions add registration function to list of classes to be registered
 #define REFLECT_END(TYPE) \
@@ -523,10 +495,10 @@ void RegisterMember(TypeData class_data, TypeData member_data) {
 //##    TypeData Fetching
 //####################################################################################
 // ########## Class Data Fetching ##########
-// Class TypeData fetching from passed in class typeid().hash_code()
-TypeData& ClassData(HashID hash_id) {
+// Class TypeData fetching from passed in class TypeHash
+TypeData& ClassData(TypeHash class_hash) {
     for (auto& pair : g_reflect->classes) {
-        if (pair.first == hash_id) return pair.second;
+        if (pair.first == class_hash) return pair.second;
     }
     return unknown_type;
 }
@@ -543,18 +515,18 @@ TypeData& ClassData(const char* class_name) {
 }
 
 // ########## Member Data Fetching ##########
-// Member TypeData fetching by member variable index and class typeid().hash_code()
-TypeData& MemberData(HashID class_hash_id, int member_index) {
+// Member TypeData fetching by member variable index and class TypeHash
+TypeData& MemberData(TypeHash class_hash, int member_index) {
     int count = 0;
-    for (auto& member : g_reflect->members[class_hash_id]) {
+    for (auto& member : g_reflect->members[class_hash]) {
         if (count == member_index) return member.second;
         ++count;
     }
     return unknown_type;
 }
-// Member TypeData fetching by member variable name and class typeid().hash_code()
-TypeData& MemberData(HashID class_hash_id, std::string member_name) {
-    for (auto& member : g_reflect->members[class_hash_id]) {
+// Member TypeData fetching by member variable name and class TypeHash
+TypeData& MemberData(TypeHash class_hash, std::string member_name) {
+    for (auto& member : g_reflect->members[class_hash]) {
         if (member.second.name == member_name) return member.second;
     }
     return unknown_type;
@@ -564,20 +536,20 @@ TypeData& MemberData(HashID class_hash_id, std::string member_name) {
 //##    Meta Data (User Info)
 //####################################################################################
 void SetMetaData(TypeData& type_data, int key, std::string data) {
-    if (type_data.hash_code != 0) type_data.meta_int_map[key] = data;
+    if (type_data.type_hash != 0) type_data.meta_int_map[key] = data;
 }
 void SetMetaData(TypeData& type_data, std::string key, std::string data) {
-    if (type_data.hash_code != 0) type_data.meta_string_map[key] = data;
+    if (type_data.type_hash != 0) type_data.meta_string_map[key] = data;
 }
 std::string GetMetaData(TypeData& type_data, int key) {
-    if (type_data.hash_code != 0) {
+    if (type_data.type_hash != 0) {
         if (type_data.meta_int_map.find(key) != type_data.meta_int_map.end())
             return type_data.meta_int_map[key];
     }
     return "";
 }
 std::string GetMetaData(TypeData& type_data, std::string key) {
-    if (type_data.hash_code != 0) {
+    if (type_data.type_hash != 0) {
         if (type_data.meta_string_map.find(key) != type_data.meta_string_map.end())
             return type_data.meta_string_map[key];
     }
