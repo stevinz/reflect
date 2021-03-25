@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Transform2D instance 't' member variable values:" << std::endl;
 
     // EXAMPLE: Return member variable by class instance, member variable index
-    TypeData& member = MemberData(t, 0);
+    TypeData member = MemberData(t, 0);
     if (member.type_hash == TypeHashID<int>()) {
         int& width = ClassMember<int>(&t, member);
         std::cout << "  " << member.title << ": " << width << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 
 
     // ########## EXAMPLE: Iterating Members
-    std::cout << "Iterating Members: " << std::endl;
+    std::cout << "Iterating Members (member count: " << ClassData("Transform2D").member_count << "): " << std::endl;
     for (int p = 0; p < ClassData("Transform2D").member_count; ++p) {
         std::cout << "  Member Index: " << p << ", Name: " << MemberData(t, p).name << ", Value(s): ";
         member = MemberData(t, p);

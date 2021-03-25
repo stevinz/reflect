@@ -82,18 +82,18 @@
 //      TYPEDATA OBJECT
 //      ----------------
 //      - Class TypeData
-//          TypeData& data = ClassData<Transform2D>();          // By class type
-//          TypeData& data = ClassData(t);                      // By class instance
-//          TypeData& data = ClassData(type_hash);              // By class type hash
-//          TypeData& data = ClassData("Transform2D");          // By class name
+//          TypeData data = ClassData<Transform2D>();           // By class type
+//          TypeData data = ClassData(t);                       // By class instance
+//          TypeData data = ClassData(type_hash);               // By class type hash
+//          TypeData data = ClassData("Transform2D");           // By class name
 //
 //      - Member TypeData
-//          TypeData& data = MemberData<Transform2D>(0);        // By class type, member index
-//          TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
-//          TypeData& data = MemberData(t, 0);                  // By class instance, member index
-//          TypeData& data = MemberData(t, "width");            // By class instance, member name 
-//          TypeData& data = MemberData(type_hash, 0);          // By class type hash, member index
-//          TypeData& data = MemberData(type_hash, "width");    // By class type hash, member name 
+//          TypeData data = MemberData<Transform2D>(0);         // By class type, member index
+//          TypeData data = MemberData<Transform2D>("width");   // By class type, member name
+//          TypeData data = MemberData(t, 0);                   // By class instance, member index
+//          TypeData data = MemberData(t, "width");             // By class instance, member name 
+//          TypeData data = MemberData(type_hash, 0);           // By class type hash, member index
+//          TypeData data = MemberData(type_hash, "width");     // By class type hash, member name 
 //
 //
 //      GET / SET MEMBER VARIABLE
@@ -105,7 +105,7 @@
 //      types using helper function TypeHashID<type_to_check>().
 //
 //      - Member Variable by Index
-//          TypeData& member = MemberData(t, 0);
+//          TypeData member = MemberData(t, 0);
 //          if (member.type_hash == TypeHashID<int>()) {
 //              // Create reference to member
 //              int& width = ClassMember<int>(&t, member);     
@@ -114,7 +114,7 @@
 //          }
 //
 //      - Member Variable by Name
-//          TypeData& member = MemberData(t, "position");
+//          TypeData member = MemberData(t, "position");
 //          if (member.type_hash == TypeHashID<std::vector<double>>()) {
 //              // Create reference to member
 //              std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
@@ -125,7 +125,7 @@
 //      - Iterating Members / Properties
 //          int member_count = ClassData("Transform2D").member_count;
 //          for (int index = 0; index < member_count; ++index) {
-//              TypeData& member = MemberData(t, index);
+//              TypeData member = MemberData(t, index);
 //              std::cout << " Index: " << member.index << ", ";
 //              std::cout << " Name: " << member.name << ",";
 //              std::cout << " Value: ";
@@ -141,7 +141,7 @@
 //          TypeHash saved_hash = ClassData(t).type_hash;
 //          void* class_pointer = (void*)(&t);
 //          ... 
-//          TypeData& member = MemberData(saved_hash, 1);
+//          TypeData member = MemberData(saved_hash, 1);
 //          if (member.type_hash == TypeHashID<int>) {
 //              std::cout << GetValue<int>(class_pointer, member); 
 //          }
@@ -160,10 +160,10 @@
 //              MEMBER_META_DATA(META_DATA_DESCRIPTION, "Width of this object.")
 //
 //      To get / set meta data at runtime, pass a TypeData object (class or member, this can be
-//      retrieved many different ways as shown earlier) to the meta data functions. TypeData object
-//      MUST BE PASSED BY REFERENCE!
+//      retrieved many different ways as shown earlier) to the meta data functions. When setting or
+//      retrieving meta data, the TypeData MUST BE PASSED BY REFERENCE!
 //
-//      - Get Reference TypeData
+//      - Get Reference to TypeData
 //          TypeData& type_data = ClassData<Transform2D>();             // From class...
 //          TypeData& type_data = MemberData<Transform2D>("width");     // or from member variable
 //
@@ -182,8 +182,8 @@
 //      Visit (https://github.com/stevinz/reflect) for more detailed instructions
 //
 //####################################################################################
-#ifndef DR_REFLECT_H
-#define DR_REFLECT_H
+#ifndef SCID_REFLECT_H
+#define SCID_REFLECT_H
 
 // Includes
 #include <functional>
@@ -235,10 +235,10 @@ struct TypeData {
 static TypeData         unknown_type    { };                                        
 
 //####################################################################################
-//##    DrReflect
+//##    SnReflect
 //##        Singleton to hold Class / Member reflection and meta data
 //############################
-class DrReflect 
+class SnReflect 
 {
 public:
     std::unordered_map<TypeHash, TypeData>                  classes     { };        // Holds data about classes / structs
@@ -260,13 +260,13 @@ public:
 //####################################################################################
 //##    Global Variable Declarations
 //############################
-extern std::shared_ptr<DrReflect>   g_reflect;                                      // Meta data singleton
+extern std::shared_ptr<SnReflect>   g_reflect;                                      // Meta data singleton
 extern Functions                    g_register_list;                                // Keeps list of registration functions 
 
 //####################################################################################
 //##    General Functions
 //############################
-void            InitializeReflection();                                             // Creates DrReflect instance and registers classes and member variables
+void            InitializeReflection();                                             // Creates SnReflect instance and registers classes and member variables
 void            CreateTitle(std::string& name);                                     // Create nice display name from class / member variable names
 void            RegisterClass(TypeData class_data);                                 // Update class TypeData
 void            RegisterMember(TypeData class_data, TypeData member_data);          // Update member TypeData                
@@ -284,7 +284,7 @@ std::string     GetMetaData(TypeData& type_data, std::string key);
 //####################################################################################
 //##    Class / Member Registration
 //############################
-// Template wrapper to register type information with DrReflect from header files
+// Template wrapper to register type information with SnReflect from header files
 template <typename T> void InitiateClass() { };                                                
 
 // Call this to register class / struct type with reflection / meta data system
@@ -358,13 +358,13 @@ TypeData& MemberData(T& class_instance, std::string member_name) {
 // NOTES:
 //  Internal Casting
 //      /* Casting from void*, not fully standardized across compilers? */
-//      DrVec3 rotation = *(DrVec3*)(class_ptr + member_data.offset);
+//      SnVec3 rotation = *(SnVec3*)(class_ptr + member_data.offset);
 //  Memcpy
-//      DrVec3 value;
+//      SnVec3 value;
 //      memcpy(&value, class_ptr + member_data.offset, member_data.size);
 //  C++ Member Pointer
 //      static constexpr auto offset_rotation = &Transform2D::rotation;
-//      DrVec3 rotation = ((&et)->*off_rot);
+//      SnVec3 rotation = ((&et)->*off_rot);
 template<typename ReturnType>
 ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
     assert(member_data.name != "unknown" && "Could not find member variable!");
@@ -441,14 +441,14 @@ ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
 #ifdef REGISTER_REFLECTION
 
 // Gloabls
-std::shared_ptr<DrReflect>      g_reflect           { nullptr };                    // Meta data singleton
+std::shared_ptr<SnReflect>      g_reflect           { nullptr };                    // Meta data singleton
 Functions                       g_register_list     { };                            // Keeps list of registration functions
 
 // ########## General Registration ##########
 // Initializes global reflection object, registers classes with reflection system
 void InitializeReflection() {
     // Create Singleton
-    g_reflect = std::make_shared<DrReflect>();
+    g_reflect = std::make_shared<SnReflect>();
     
     // Register Structs / Classes
     for (int func = 0; func < g_register_list.size(); ++func) {
@@ -557,4 +557,4 @@ std::string GetMetaData(TypeData& type_data, std::string key) {
 }
 
 #endif  // REGISTER_REFLECTION
-#endif  // DR_REFLECT_H
+#endif  // SCID_REFLECT_H

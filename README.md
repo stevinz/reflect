@@ -69,25 +69,25 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ### TypeData Object
 ```cpp
     // Class TypeData
-    TypeData& data = ClassData<Transform2D>();          // By class type
-    TypeData& data = ClassData(t);                      // By class instance
-    TypeData& data = ClassData(type_hash);              // By class type hash
-    TypeData& data = ClassData("Transform2D");          // By class name
+    TypeData data = ClassData<Transform2D>();           // By class type
+    TypeData data = ClassData(t);                       // By class instance
+    TypeData data = ClassData(type_hash);               // By class type hash
+    TypeData data = ClassData("Transform2D");           // By class name
 
     // Member TypeData
-    TypeData& data = MemberData<Transform2D>(0);        // By class type, member index
-    TypeData& data = MemberData<Transform2D>("width");  // By class type, member name
-    TypeData& data = MemberData(t, 0);                  // By class instance, member index
-    TypeData& data = MemberData(t, "width");            // By class instance, member name 
-    TypeData& data = MemberData(type_hash, 0);          // By class type hash, member index
-    TypeData& data = MemberData(type_hash, "width");    // By class type hash, member name 
+    TypeData data = MemberData<Transform2D>(0);         // By class type, member index
+    TypeData data = MemberData<Transform2D>("width");   // By class type, member name
+    TypeData data = MemberData(t, 0);                   // By class instance, member index
+    TypeData data = MemberData(t, "width");             // By class instance, member name 
+    TypeData data = MemberData(type_hash, 0);           // By class type hash, member index
+    TypeData data = MemberData(type_hash, "width");     // By class type hash, member name 
 ```
 
 ### Get / Set Member Variables
 - Use the ClassMember<member_type>(class_instance, member_data) function to return a reference to a member variable. This function requires the return type, a class instance (can be void* or class type), and a member variable TypeData object. Before calling ClassMember<>(), member variable type can be checked by comparing to types using helper function TypeHashID<type_to_check>()
 ```cpp
     // Member Variable by Index
-    TypeData& member = MemberData(t, 0);
+    TypeData member = MemberData(t, 0);
     if (member.type_hash == TypeHashID<int>()) {
         // Create reference to member
         int& width = ClassMember<int>(&t, member);     
@@ -96,7 +96,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     }
 
     // Member Variable by Name
-    TypeData& member = MemberData(t, "position");
+    TypeData member = MemberData(t, "position");
     if (member.type_hash == TypeHashID<std::vector<double>>()) {
         // Create reference to member
         std::vector<double>& position = ClassMember<std::vector<double>>(&t, member);
@@ -110,7 +110,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ```cpp
     int member_count = ClassData(t).member_count;
     for (int index = 0; index < member_count; ++index) {
-        TypeData& member = MemberData(t, index);
+        TypeData member = MemberData(t, index);
         std::cout << " Index: " << member.index << ", ";
         std::cout << " Name: "  << member.name  << ", ";
         std::cout << " Title: " << member.title << ", ";
@@ -138,7 +138,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 - Later (if your components are stored as void pointers in an array / vector / etc. with other components) you may still access the member variables of the component without casting the component back to the original type. This is done by using the saved_hash from earlier:
 ```cpp
     using vec = std::vector<double>;
-    TypeData& member = MemberData(saved_hash, 3);
+    TypeData member = MemberData(saved_hash, 3);
     if (member.type_hash == TypeHashID<vec>()) {
         vec& rotation = ClassMember<vec>(class_pointer, member);
         std::cout << "  Rotation X: " << rotation[0];
