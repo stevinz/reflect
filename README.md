@@ -17,12 +17,12 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 
 - Classes / Structs should be simple aggregate types (standard layout)
     - No private or protected non-static data members
-    - No user-declared / user-provided constructors 
+    - No user-declared / user-provided constructors
     - No virtual member functions
     - No default member initializers (invalid in C++11, okay in C++14 and higher)
-    - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info 
+    - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info
 
-- BEFORE using reflection functions, make one call to 
+- BEFORE using reflection functions, make one call to
 ```cpp
     InitializeReflection();
 ```
@@ -37,7 +37,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 
     #include "reflect.h"
     struct Transform2D {
-        int width;        
+        int width;
         int height;
         std::vector<double> position;
         std::string text;
@@ -78,9 +78,9 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     TypeData data = MemberData<Transform2D>(0);         // By class type, member index
     TypeData data = MemberData<Transform2D>("width");   // By class type, member name
     TypeData data = MemberData(t, 0);                   // By class instance, member index
-    TypeData data = MemberData(t, "width");             // By class instance, member name 
+    TypeData data = MemberData(t, "width");             // By class instance, member name
     TypeData data = MemberData(type_hash, 0);           // By class type hash, member index
-    TypeData data = MemberData(type_hash, "width");     // By class type hash, member name 
+    TypeData data = MemberData(type_hash, "width");     // By class type hash, member name
 ```
 
 ### Get / Set Member Variables
@@ -90,9 +90,9 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
     TypeData member = MemberData(t, 0);
     if (member.type_hash == TypeHashID<int>()) {
         // Create reference to member
-        int& width = ClassMember<int>(&t, member);     
+        int& width = ClassMember<int>(&t, member);
         // Can now set member variable directly
-        width = 120;                                        
+        width = 120;
     }
 
     // Member Variable by Name
@@ -134,7 +134,7 @@ Small, flexible, single header library for aggregate (struct / class) runtime re
 ```cpp
     TypeHash saved_hash = ClassData(t).type_hash;
     void* class_pointer = (void*)(&t);
-```  
+```
 - Later (if your components are stored as void pointers in an array / vector / etc. with other components) you may still access the member variables of the component without casting the component back to the original type. This is done by using the saved_hash from earlier:
 ```cpp
     using vec = std::vector<double>;
@@ -197,21 +197,3 @@ Tested and compiled with:
 Reflect is released under the terms of the MIT license, so it is free to use in your free or commercial projects.
 
 Copyright (c) 2021 Stephens Nunnally and Scidian Software
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
