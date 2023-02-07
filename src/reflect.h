@@ -1,11 +1,11 @@
 //####################################################################################
 //
-// Description:     Reflect, C++ 11 Reflection Library
-// Author:          Stephens Nunnally and Scidian Software
+// Description:     Reflect, C++11 Reflection Library
+// Author:          Stephens Nunnally <@stevinz>
 // License:         Distributed under the MIT License
 // Source(s):       https://github.com/stevinz/reflect
 //
-// Copyright (c) 2021 Stephens Nunnally and Scidian Software
+// Copyright (c) 2021 Stephens Nunnally
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,22 +39,22 @@
 //
 // - Classes / Structs should be simple aggregate types (standard layout)
 //      - No private or protected non-static data members
-//      - No user-declared / user-provided constructors 
+//      - No user-declared / user-provided constructors
 //      - No virtual member functions
 //      - No default member initializers (invalid in C++11, okay in C++14 and higher)
-//      - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info 
+//      - See (https://en.cppreference.com/w/cpp/types/is_standard_layout) for more info
 //
 // - BEFORE using reflection, make one call to 'InitializeReflection()'
 //
 //####################################################################################
 //
 // USAGE:
-//      EXAMPLE CLASS HEADER: 
+//      EXAMPLE CLASS HEADER:
 //      start header...
 //
 //          #include "reflect.h"
 //          struct Transform2D {
-//              int width;        
+//              int width;
 //              int height;
 //              std::vector <double> position;
 //              REFLECT();
@@ -91,9 +91,9 @@
 //          TypeData data = MemberData<Transform2D>(0);         // By class type, member index
 //          TypeData data = MemberData<Transform2D>("width");   // By class type, member name
 //          TypeData data = MemberData(t, 0);                   // By class instance, member index
-//          TypeData data = MemberData(t, "width");             // By class instance, member name 
+//          TypeData data = MemberData(t, "width");             // By class instance, member name
 //          TypeData data = MemberData(type_hash, 0);           // By class type hash, member index
-//          TypeData data = MemberData(type_hash, "width");     // By class type hash, member name 
+//          TypeData data = MemberData(type_hash, "width");     // By class type hash, member name
 //
 //
 //      GET / SET MEMBER VARIABLE
@@ -108,9 +108,9 @@
 //          TypeData member = MemberData(t, 0);
 //          if (member.type_hash == TypeHashID<int>()) {
 //              // Create reference to member
-//              int& width = ClassMember<int>(&t, member);     
+//              int& width = ClassMember<int>(&t, member);
 //              // Can now set member variable directly
-//              width = 120;                                        
+//              width = 120;
 //          }
 //
 //      - Member Variable by Name
@@ -140,10 +140,10 @@
 //          ...
 //          TypeHash saved_hash = ClassData(t).type_hash;
 //          void* class_pointer = (void*)(&t);
-//          ... 
+//          ...
 //          TypeData member = MemberData(saved_hash, 1);
 //          if (member.type_hash == TypeHashID<int>) {
-//              std::cout << GetValue<int>(class_pointer, member); 
+//              std::cout << GetValue<int>(class_pointer, member);
 //          }
 //
 //
@@ -218,7 +218,7 @@ using StringMap =       std::map<std::string, std::string>;                     
 //##    Class / Member Type Data
 //############################
 struct TypeData {
-    std::string         name            { "unknown" };                              // Actual struct / class / member variable name 
+    std::string         name            { "unknown" };                              // Actual struct / class / member variable name
     std::string         title           { "unknown" };                              // Pretty (capitalized, spaced) name for displaying in gui
     TypeHash            type_hash       { 0 };                                      // Underlying typeid().hash_code of actual type
     IntMap              meta_int_map    { };                                        // Map to hold user meta data by int key
@@ -232,19 +232,19 @@ struct TypeData {
 };
 
 // Empty TypeData to return by reference on GetTypeData() fail
-static TypeData         unknown_type    { };                                        
+static TypeData         unknown_type    { };
 
 //####################################################################################
 //##    SnReflect
 //##        Singleton to hold Class / Member reflection and meta data
 //############################
-class SnReflect 
+class SnReflect
 {
 public:
     std::unordered_map<TypeHash, TypeData>                  classes     { };        // Holds data about classes / structs
     std::unordered_map<TypeHash, std::map<int, TypeData>>   members     { };        // Holds data about member variables (of classes)
 
-public:    
+public:
     void AddClass(TypeData class_data) {
         assert(class_data.type_hash != 0 && "Class type hash is 0, error in registration?");
         classes[class_data.type_hash] = class_data;
@@ -261,7 +261,7 @@ public:
 //##    Global Variable Declarations
 //############################
 extern std::shared_ptr<SnReflect>   g_reflect;                                      // Meta data singleton
-extern Functions                    g_register_list;                                // Keeps list of registration functions 
+extern Functions                    g_register_list;                                // Keeps list of registration functions
 
 //####################################################################################
 //##    General Functions
@@ -269,10 +269,10 @@ extern Functions                    g_register_list;                            
 void            InitializeReflection();                                             // Creates SnReflect instance and registers classes and member variables
 void            CreateTitle(std::string& name);                                     // Create nice display name from class / member variable names
 void            RegisterClass(TypeData class_data);                                 // Update class TypeData
-void            RegisterMember(TypeData class_data, TypeData member_data);          // Update member TypeData                
+void            RegisterMember(TypeData class_data, TypeData member_data);          // Update member TypeData
 
 // TypeHash helper function
-template <typename T> 
+template <typename T>
 TypeHash        TypeHashID() { return typeid(T).hash_code(); }
 
 // Meta data
@@ -285,20 +285,20 @@ std::string     GetMetaData(TypeData& type_data, std::string key);
 //##    Class / Member Registration
 //############################
 // Template wrapper to register type information with SnReflect from header files
-template <typename T> void InitiateClass() { };                                                
+template <typename T> void InitiateClass() { };
 
 // Call this to register class / struct type with reflection / meta data system
 template <typename ClassType>
-void RegisterClass(TypeData class_data) { 
+void RegisterClass(TypeData class_data) {
     assert(std::is_standard_layout<ClassType>() && "Class is not standard layout!!");
-	g_reflect->AddClass(class_data); 
+	g_reflect->AddClass(class_data);
 }
 
 // Call this to register member variable with reflection / meta data system
 template <typename MemberType>
 void RegisterMember(TypeData class_data, TypeData member_data) {
-	g_reflect->AddMember(class_data, member_data); 
-} 
+	g_reflect->AddMember(class_data, member_data);
+}
 
 //####################################################################################
 //##    Reflection TypeData Fetching
@@ -310,8 +310,8 @@ TypeData& ClassData() {
     TypeHash class_hash = typeid(T).hash_code();
     if (g_reflect->classes.find(class_hash) != g_reflect->classes.end()) {
         return g_reflect->classes[class_hash];
-    } else { 
-        return unknown_type; 
+    } else {
+        return unknown_type;
     }
 }
 // Class TypeData fetching from passed in class instance
@@ -332,12 +332,12 @@ TypeData& MemberData(TypeHash class_hash, int member_index);
 // Member TypeData fetching by member variable index and class name
 template<typename T>
 TypeData& MemberData(int member_index) {
-    return MemberData(TypeHashID<T>(), member_index);   
+    return MemberData(TypeHashID<T>(), member_index);
 }
 // Member TypeData fetching by member variable index and class instance
 template<typename T>
 TypeData& MemberData(T& class_instance, int member_index) {
-    return MemberData<T>(member_index);   
+    return MemberData<T>(member_index);
 }
 
 // -------------------------    By Name  -------------------------
@@ -346,12 +346,12 @@ TypeData& MemberData(TypeHash class_hash, std::string member_name);
 // Member TypeData fetching by member variable Name and class name
 template<typename T>
 TypeData& MemberData(std::string member_name) {
-    return MemberData(TypeHashID<T>(), member_name); 
+    return MemberData(TypeHashID<T>(), member_name);
 }
 // Member TypeData fetching by member variable name and class instance
 template<typename T>
 TypeData& MemberData(T& class_instance, std::string member_name) {
-    return MemberData<T>(member_name); 
+    return MemberData<T>(member_name);
 }
 
 // #################### Member Variable Fetching ####################
@@ -412,7 +412,7 @@ ReturnType& ClassMember(void* class_ptr, TypeData& member_data) {
 		mbrs[member_index].size = sizeof(T::MEMBER); \
 		mbrs[member_index].title = #MEMBER; \
         CreateTitle(mbrs[member_index].title); \
-		RegisterMember<decltype(T::MEMBER)>(class_data, mbrs[member_index]); 
+		RegisterMember<decltype(T::MEMBER)>(class_data, mbrs[member_index]);
 
 // Meta data functions
 #define MEMBER_META_TITLE(STRING) \
@@ -449,10 +449,10 @@ Functions                       g_register_list     { };                        
 void InitializeReflection() {
     // Create Singleton
     g_reflect = std::make_shared<SnReflect>();
-    
+
     // Register Structs / Classes
     for (int func = 0; func < g_register_list.size(); ++func) {
-        g_register_list[func]();       
+        g_register_list[func]();
     }
     g_register_list.clear();        // Clean up
 }
@@ -482,14 +482,14 @@ void CreateTitle(std::string& name) {
 
 // ########## Class / Member Registration ##########
 // Update class TypeData
-void RegisterClass(TypeData class_data) { 
-	g_reflect->AddClass(class_data); 
+void RegisterClass(TypeData class_data) {
+	g_reflect->AddClass(class_data);
 }
 
 // Update member TypeData
-void RegisterMember(TypeData class_data, TypeData member_data) {                     
-	g_reflect->AddMember(class_data, member_data); 
-} 
+void RegisterMember(TypeData class_data, TypeData member_data) {
+	g_reflect->AddMember(class_data, member_data);
+}
 
 //####################################################################################
 //##    TypeData Fetching
